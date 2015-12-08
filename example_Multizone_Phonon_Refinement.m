@@ -38,7 +38,7 @@ end
 %% SIMULATED DATA
 
 %N_q22=49;
-N_q52=10;
+N_q52=49;
 
 gvars=[];
 
