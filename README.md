@@ -22,3 +22,15 @@ independent while letting their intensities vary from zone to
 zone (see the right panel in Fig. 3).
 
 http://dx.doi.org/10.1103/PhysRevB.89.064310
+
+"van_var.m" is from the Horace package ( http://horace.isis.rl.ac.uk/Main_Page )
+"merchop.m" is an brutal hack of MCHOP, also part of Horace.
+Both of these functions will go away in future releases, to be replaced with a
+resolution-width calculator.
+
+This refinement program uses the "leasqr.m" file from Octave's "optim" package.
+You can install optim by typing this on the octave command line :
+```
+pkg install -forge optim
+```
+You may have to install dependencies first.

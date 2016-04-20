@@ -1,4 +1,26 @@
-function SYMDAT = refine_phonons_multizones(SYMDAT)
+function SYMDAT = refine_phonons_multizones(SYMDAT);
+% SYMDAT = refine_phonons_multizones(SYMDAT)
+%	SYMDAT is an ensemble of data from a single reduced-q point.  
+%	
+%	Each element of SYMDAT will correspond to data from a different .sqw file,
+%	where each .sqw has a different experimental condition (such as different 
+%	crystal orientations, incident energies, etc.).
+%
+%	Each element of SYMDAT contains a data bundle (SQW), as well as auxilary
+%	information about that data (AUX).  AUX contains the variables for the
+%	model, such as peak centers/heights/wids, instrument resolution, etc.
+%	SYMDAT elements also contain Ei and chopper frequency.
+%	
+%	The first element of SYMDAT also contains VARS, which is an ensemble of AUX
+%
+%	SQW should have fields for x_dat, y_dat, e_dat (energy, intensity, error), 
+%	as well as HKL_vals (and ideally Q_mags).
+
+% Perhaps should retitle these things:
+%	SQW 	-> DAT
+%	VARS 	-> AUXS
+%	SYMDAT	-> SYM
+
 
 
 VARS=SYMDAT{1}.VARS;

@@ -21,7 +21,7 @@ function [fitcens,tocs,SNR]=example_Multizone_Phonon_Refinement(split,resfactor,
 
 tic
 if nargin < 4
-	N_q22=49;
+	N_q22=5;
 	if nargin < 3;
 		junkscale=0.1;
 		if nargin < 2
@@ -37,8 +37,8 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% SIMULATED DATA
 
-%N_q22=49;
-N_q52=49;
+N_q22=9;
+N_q52=9;
 
 gvars=[];
 
@@ -52,7 +52,7 @@ if 1
 	Ei=21.9;
 	chopfreq=300;
 %	eng1=[0:.25:sum(cens)];eng1=eng1(:);
-	eng1=[10:.25:16];eng1=eng1(:);
+	eng1=[11:.25:15];eng1=eng1(:);
 	reswids=merchop(Ei,chopfreq,cens);	reswids=reswids(:)*resfactor;
 
 	% gvars is center, height, Lwidth, Rwidth for each peak
@@ -73,7 +73,7 @@ if 1
 	if 1		% turn this on to add a second SYMDAT
 		Ei=52;
 		chopfreq=300;
-		eng2=[6:.5:20];eng2=eng2(:);
+		eng2=[10:.5:20];eng2=eng2(:);
 		reswids=merchop(Ei,chopfreq,cens);	reswids=reswids(:);
 		gvars=[cens zeros(size(cens)) 0.66*reswids 0.33*reswids];
 
@@ -116,7 +116,6 @@ SNR=sum(model(:))/sum(abs(junk(:)));
 %% here startvars is given, but in general it would come from a SNAXS calculation.
 SYMDAT=generate_AUX(SYMDAT,startvars);
 SYMDAT=make_VARS(SYMDAT);
-
 
 % fit data
 SYMDAT = refine_phonons_multizones(SYMDAT);
