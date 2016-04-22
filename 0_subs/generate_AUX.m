@@ -1,7 +1,7 @@
-function SYMDAT=generate_AUX(SYMDAT,startvars);
-% SYMDAT=generate_AUX(SYMDAT,startvars);
-%	Each subset of data (a single SQW) has an AUX structure associated with it.
-%	AUX contains auxiliary information about that SQW.
+function SYM=generate_AUX(SYM,startvars);
+% SYM=generate_AUX(SYM,startvars);
+%	Each subset of data (a single DAT) has an AUX structure associated with it.
+%	AUX contains auxiliary information about that DAT.
 %
 %	startvars(Nph x 2) has [cen,wid] for each mode
 % 	Overall structure of AUX.auxvars:
@@ -13,16 +13,16 @@ function SYMDAT=generate_AUX(SYMDAT,startvars);
 %
 
 
-for ind=1:length(SYMDAT)
+for ind=1:length(SYM)
 	clear AUX;
-	SQW=SYMDAT{ind}.SQW;
+	DAT=SYM{ind}.DAT;
 
-	AUX.Nq=size(SQW.ydat,2);
+	AUX.Nq=size(DAT.ydat,2);
 	AUX.Nph=size(startvars,1);
-	AUX.wdat=1./SQW.edat.^2;
+	AUX.wdat=1./DAT.edat.^2;
 
 	%new mask function makes mask and starting values for height fitting/decides whether to fit a height
-	[AUX.mask goodheight free_cenht] = make_mask(SYMDAT,startvars,ind);
+	[AUX.mask goodheight free_cenht] = make_mask(SYM,startvars,ind);
 
 	AUX.indE=[0 cumsum(sum(AUX.mask,1))];	% index of length of good points at each Q
 	AUX.goodQ=sum(AUX.mask);
@@ -32,9 +32,9 @@ for ind=1:length(SYMDAT)
 	goodwid=zeros(size(goodcen));
 
 
-	constantBackground = repmat(0,1,AUX.Nq);%min(SQW.ydat);
+	constantBackground = repmat(0,1,AUX.Nq);%min(DAT.ydat);
 
-	reswids=merchop(SYMDAT{ind}.Ei, SYMDAT{ind}.chopfreq, goodcen);
+	reswids=merchop(SYM{ind}.Ei, SYM{ind}.chopfreq, goodcen);
 	reswids=repmat(reswids(:),1,AUX.Nq);
 
 	linearBackground = repmat(0,1,AUX.Nq);
@@ -48,13 +48,13 @@ for ind=1:length(SYMDAT)
 
 	% set BOUNDS
 	AUX.bounds_L=zeros(size(AUX.auxvars));
-	AUX.bounds_L([1:end-1],1,1)=min(SQW.xdat(:,1));		% min center
+	AUX.bounds_L([1:end-1],1,1)=min(DAT.xdat(:,1));		% min center
 
 	AUX.bounds_H=ones(size(AUX.auxvars));
-	AUX.bounds_H([1:end-1],1,1)=max(SQW.xdat(:,1));		% max cen is max of range
-	AUX.bounds_H(:,[2:end],1)=1.5*max(max(SQW.ydat));	% maxheight is 1.5x maxdata
+	AUX.bounds_H([1:end-1],1,1)=max(DAT.xdat(:,1));		% max cen is max of range
+	AUX.bounds_H(:,[2:end],1)=1.5*max(max(DAT.ydat));	% maxheight is 1.5x maxdata
 	AUX.bounds_H(:,:,2)=Inf;								% no max wid
-	AUX.bounds_H(end,[2:end],2) = 1.5*max(max(SQW.ydat));
+	AUX.bounds_H(end,[2:end],2) = 1.5*max(max(DAT.ydat));
 
 	% setup freevars field
 	AUX.freevars=ones(size(AUX.auxvars));
@@ -69,5 +69,5 @@ for ind=1:length(SYMDAT)
 	AUX.peak_asymmetry=1.7;	%determined empirically for ARCS, using fityk
 
 	% attach
-	SYMDAT{ind}.AUX=AUX;
+	SYM{ind}.AUX=AUX;
 end

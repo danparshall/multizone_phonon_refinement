@@ -8,7 +8,7 @@ function [fitcens,tocs,SNR]=example_Multizone_Phonon_Refinement(split,resfactor,
 % 
 % It is possible to collect multiple data sets of the same crystal (either in
 % different orientations, or using different Ei). Each data set is considered a
-% single instance of S(q,w).  MPR can co-refine multiple SQW.
+% single instance of S(q,w).  MPR can co-refine multiple DAT.
 %
 % Simulated data is a pair of overlapping peaks with varying intensity in 
 % multiple Brillouin zones.  
@@ -61,16 +61,16 @@ if 1
 	[ydat,edat,htout,model,junk]=simulate_Qdat(gvars,N_q22,eng1,junkscale);
 	xdat=repmat(eng1,1,size(ydat,2));	% simulating Q
 
-	SQW.xdat=xdat;
-	SQW.ydat=ydat;
-	SQW.edat=edat;
-	SQW.htout=htout;
-	SYMDAT{1}.SQW=SQW;
-	SYMDAT{1}.Ei=Ei;
-	SYMDAT{1}.chopfreq=chopfreq;
-%	save('TESTDAT2','SQW');
+	DAT.xdat=xdat;
+	DAT.ydat=ydat;
+	DAT.edat=edat;
+	DAT.htout=htout;
+	SYM{1}.DAT=DAT;
+	SYM{1}.Ei=Ei;
+	SYM{1}.chopfreq=chopfreq;
+%	save('TESTDAT2','DAT');
 
-	if 1		% turn this on to add a second SYMDAT
+	if 1		% turn this on to add a second SYM
 		Ei=52;
 		chopfreq=300;
 		eng2=[10:.5:20];eng2=eng2(:);
@@ -79,23 +79,23 @@ if 1
 
 		[ydat,edat,htout,model2,junk2]=simulate_Qdat(gvars,N_q52,eng2,junkscale);
 		xdat=repmat(eng2,1,size(ydat,2));	% simulating Q
-		SQW.xdat=xdat;
-		SQW.ydat=ydat;
-		SQW.edat=edat;
-		SQW.htout=htout;
-		SYMDAT{2}.SQW=SQW;
-		SYMDAT{2}.Ei=Ei;
-		SYMDAT{2}.chopfreq=chopfreq;
+		DAT.xdat=xdat;
+		DAT.ydat=ydat;
+		DAT.edat=edat;
+		DAT.htout=htout;
+		SYM{2}.DAT=DAT;
+		SYM{2}.Ei=Ei;
+		SYM{2}.chopfreq=chopfreq;
 		junk=[junk(:); junk2(:)];
 		model=[model(:); model2(:)];
 	else
-		disp(' Setting SYMDAT{2}=SYMDAT{1}')
-		SYMDAT{2}=SYMDAT{1};
+		disp(' Setting SYM{2}=SYM{1}')
+		SYM{2}=SYM{1};
 	end
 else
-	SQW=load('TESTDAT2');
-	SQW=SQW.SQW;
-	SYMDAT{1}.SQW=SQW;
+	DAT=load('TESTDAT2');
+	DAT=DAT.DAT;
+	SYM{1}.DAT=DAT;
 disp(' LOADED...')
 end
 
@@ -108,19 +108,19 @@ SNR=sum(model(:))/sum(abs(junk(:)));
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%size(SYMDAT{1}.SQW.xdat)
+%size(SYM{1}.DAT.xdat)
 
 %% FITTING METHOD
 
 %% generate AUX and VARS structures prior to fitting
 %% here startvars is given, but in general it would come from a SNAXS calculation.
-SYMDAT=generate_AUX(SYMDAT,startvars);
-SYMDAT=make_VARS(SYMDAT);
+SYM=generate_AUX(SYM,startvars);
+SYM=make_VARS(SYM);
 
 % fit data
-SYMDAT = refine_phonons_multizones(SYMDAT);
+SYM = refine_phonons_multizones(SYM);
 
-fitcens=SYMDAT{1}.VARS.allvars(:,1);
+fitcens=SYM{1}.VARS.allvars(:,1);
 
 
 fitcens=fitcens(1:size(gvars,1))
@@ -135,4 +135,4 @@ errfit=(fitcens-gvars(:,1))./gvars(:,1);
 fitcens=fitcens(:)';
 
 tocs=toc;
-SYMDATmult=SYMDAT;
+SYMmult=SYM;

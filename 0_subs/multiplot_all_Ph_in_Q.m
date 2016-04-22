@@ -1,7 +1,7 @@
-function multiplot_all_phonon_single_Q(SYMDAT, ind_q, maxheight);
+function multiplot_all_phonon_single_Q(SYM, ind_q, maxheight);
 
-AUX=SYMDAT.AUX;
-SYM=SYMDAT.SQW;
+AUX=SYM.AUX;
+SYM=SYM.DAT;
 y_fit=calc_DAT_singleQ(AUX,SYM,ind_q);
 
 if ~exist('maxheight'); maxheight=[]; end

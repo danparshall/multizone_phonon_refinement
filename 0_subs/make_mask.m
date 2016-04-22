@@ -1,5 +1,5 @@
-function [mask, goodheight, center_height] = make_mask(SYMDAT,startvars,sqwind)
-% [mask, goodheight, free_iCenht] = make_mask(SYMDAT,startvars,sqwind)
+function [mask, goodheight, center_height] = make_mask(SYM,startvars,sqwind)
+% [mask, goodheight, free_iCenht] = make_mask(SYM,startvars,sqwind)
 %	looks through data, excludes datasets that don't have a good peak
 %	mask is a boolean, size(ydat). 1 for valid data.
 %	goodheight is finite for good peaks, 0 otherwise
@@ -15,12 +15,12 @@ peak2error = 2;% ratio of peak height to error bar where if the error bar is to 
 						%(set peak2error to any negative number to disable exclusion of proportionally high-error data)
 
 %starting variables
-SQW = SYMDAT{sqwind}.SQW;
+DAT = SYM{sqwind}.DAT;
 centers = startvars(:,1);
-eng = SQW.xdat(:,1);
+eng = DAT.xdat(:,1);
 xstep = eng(2)-eng(1);
-ydat = SQW.ydat;
-edat = SQW.edat;
+ydat = DAT.ydat;
+edat = DAT.edat;
 
 Nph=length(centers);
 Nq=size(ydat,2);
@@ -51,7 +51,7 @@ eBins = [eBins length(eng)];
 eBins = round(eBins);
 peaksize = [];%peakSize is the distance (in meV) from a peak that the mask looks (should be within a magnitude of resolution width probably)
 for ind = 1:Nph
-	peaksize = [peaksize peak_expansion*merchop(SYMDAT{sqwind}.Ei,SYMDAT{sqwind}.chopfreq,centers(ind))];
+	peaksize = [peaksize peak_expansion*merchop(SYM{sqwind}.Ei,SYM{sqwind}.chopfreq,centers(ind))];
 end
 
 

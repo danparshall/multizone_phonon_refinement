@@ -1,13 +1,13 @@
-function unc=calc_unc(SYMDAT)
+function unc=calc_unc(SYM)
 % use
 
 
-VARS=SYMDAT{1}.VARS;
+VARS=SYM{1}.VARS;
 varsin=VARS.varsin;
 ydat=VARS.ydatin;
 wdat=VARS.wdatin;		% weights
 
-[func,jac]=calc_DAT_multiQ(SYMDAT,varsin);
+[func,jac]=calc_DAT_multiQ(SYM,varsin);
 
 % find Jacobian values that actually change (ignore unused variables)
 Jcol=find(sum(jac,1));

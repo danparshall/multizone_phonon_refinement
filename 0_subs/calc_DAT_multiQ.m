@@ -1,24 +1,24 @@
-function [funcout,jacout]=calc_DAT_multiQ(SYMDAT,varsin)
-% [funcout,jout]=calc_model_multiQ_JAC(SYMDAT,varsin)
+function [funcout,jacout]=calc_DAT_multiQ(SYM,varsin)
+% [funcout,jout]=calc_model_multiQ_JAC(SYM,varsin)
 %	Calculates the function and Jacobian (ensemble of partial derivatives) for
-%	all Q in the SYMDAT set.
+%	all Q in the SYM set.
 
 debug = 0;
 
-SYMDAT=update_AUX(SYMDAT,varsin);
-VARS=SYMDAT{1}.VARS;
+SYM=update_AUX(SYM,varsin);
+VARS=SYM{1}.VARS;
 Nph=VARS.Nph;
 funcout=[];
 jacout=[];
 
-for inds=1:length(SYMDAT)
+for inds=1:length(SYM)
 	ycalc = [];
 	ind_wids=[];
 	clear AUX;
 	clear SYM;
 
-	AUX=SYMDAT{inds}.AUX;
-	SYM=SYMDAT{inds}.SQW;
+	AUX=SYM{inds}.AUX;
+	SYM=SYM{inds}.DAT;
 
 	%ycalc=zeros(size(SYM.ydat));
 	N_good=length(find(AUX.mask));
@@ -41,10 +41,10 @@ for inds=1:length(SYMDAT)
 		%modout(~isfinite(modout))=0;%hopefully this isn't necessary
 		ycalc = [ycalc modout];
 		if ~isempty(find(isnan(thisjac)))
-			disp(['Jacobian NaN at ind=' num2str(ind) ', SYMDAT ' num2str(inds)]);
+			disp(['Jacobian NaN at ind=' num2str(ind) ', SYM ' num2str(inds)]);
 		end
 		if ~isempty(find(isinf(thisjac)))
-			disp(['Jacobian Inf at ind=' num2str(ind) ', SYMDAT ' num2str(inds)]);
+			disp(['Jacobian Inf at ind=' num2str(ind) ', SYM ' num2str(inds)]);
 		end
 		% place subsect of thisjac into correct part of jacaux
 		this_indE= [ AUX.indE(ind)+1 : AUX.indE(ind+1) ];		% lineup for eng
@@ -71,8 +71,8 @@ for inds=1:length(SYMDAT)
 
 
 	ind_wids=[ind_wids indwid(1)];
-	SYMDAT{inds}.funaux=ycalc';
-	SYMDAT{inds}.jacaux=jacaux;
+	SYM{inds}.funaux=ycalc';
+	SYM{inds}.jacaux=jacaux;
 	funcout=[funcout; ycalc'];%funcout=[funcout; ycalc(AUX.mask)];
 
 	if 0
@@ -92,9 +92,9 @@ ind_func=0;
 ind_qs=0;
 %ind_wids;
 Nqs=[0 VARS.Nqs];
-for ind=1:length(SYMDAT)
+for ind=1:length(SYM)
 	%row of jacout
-	ind_func=[ind_func length(find(SYMDAT{ind}.AUX.mask))];
+	ind_func=[ind_func length(find(SYM{ind}.AUX.mask))];
 	jrow=[ind_func(ind)+1 : sum(ind_func)];
 
 	%columns of jacaux
@@ -122,24 +122,24 @@ for ind=1:length(SYMDAT)
 		disp(' ')
 		ind
 		size(jacout)
-		disp([' jacaux : ' num2str(size(SYMDAT{ind}.jacaux)) ])
+		disp([' jacaux : ' num2str(size(SYM{ind}.jacaux)) ])
 		length(jrow)
 		idxcen
 		indcen
 	end
 
-	jacout(jrow,idxcen)=SYMDAT{ind}.jacaux(:,indcen);			% centers
-	jacout(jrow,idxwid)=SYMDAT{ind}.jacaux(:,indwid);			% widths
-	jacout(jrow,idxht)=SYMDAT{ind}.jacaux(:,indht);			% heights
-	jacout(jrow,idxconst)=SYMDAT{ind}.jacaux(:,indconst);		% constant BG
-	jacout(jrow,idxlin)=SYMDAT{ind}.jacaux(:,indlin);			% linear BG
+	jacout(jrow,idxcen)=SYM{ind}.jacaux(:,indcen);			% centers
+	jacout(jrow,idxwid)=SYM{ind}.jacaux(:,indwid);			% widths
+	jacout(jrow,idxht)=SYM{ind}.jacaux(:,indht);			% heights
+	jacout(jrow,idxconst)=SYM{ind}.jacaux(:,indconst);		% constant BG
+	jacout(jrow,idxlin)=SYM{ind}.jacaux(:,indlin);			% linear BG
 end
-jacout=jacout(:,SYMDAT{1}.VARS.indfree);
+jacout=jacout(:,SYM{1}.VARS.indfree);
 %display each iteration of fitting
 if 0;
-	eng = SYMDAT{1}.SQW.xdat(AUX.mask);
-	%semilogy(SYMDAT{1}.SQW.xdat(AUX.mask),SYMDAT{1}.SQW.ydat(AUX.mask),'bo',SYMDAT{1}.SQW.xdat(AUX.mask),funcout,'ro')
-	hold off; errorbar(eng, SYMDAT{1}.SQW.ydat(AUX.mask), SYMDAT{1}.SQW.edat(AUX.mask),'b--');
+	eng = SYM{1}.DAT.xdat(AUX.mask);
+	%semilogy(SYM{1}.DAT.xdat(AUX.mask),SYM{1}.DAT.ydat(AUX.mask),'bo',SYM{1}.DAT.xdat(AUX.mask),funcout,'ro')
+	hold off; errorbar(eng, SYM{1}.DAT.ydat(AUX.mask), SYM{1}.DAT.edat(AUX.mask),'b--');
 	length(funcout)
 	length(eng)
 	hold on; plot(eng, funcout, 'r-', 'linewidth',1)
