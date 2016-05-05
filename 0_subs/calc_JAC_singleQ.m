@@ -1,5 +1,5 @@
-function [modout,jacout,varargout]=calc_JAC_singleQ(AUX,SYM,idx);
-% [modout,jacout,varargout]=calc_JAC_singleQ(AUX,SYM,idx);
+function [modelout,jacout,varargout]=calc_JAC_singleQ(AUX,DAT,idx);
+% [modelout,jacout,varargout]=calc_JAC_singleQ(AUX,DAT,idx);
 % 	Calculates the data for a single Q.  
 %	If requested, calculates and delivers Jacobian as well.
 %	option in here to constrain heights.
@@ -7,11 +7,13 @@ function [modout,jacout,varargout]=calc_JAC_singleQ(AUX,SYM,idx);
 
 if ~exist('idx'); idx=1; end
 
-eng=SYM.xdat(AUX.mask(:,idx),idx);	%	pulls just valid points
+eng = AUX.eng;
 eng=eng(:)';
 
 cen=AUX.auxvars(1:end-1,1,1);
 ht=AUX.auxvars(1:end-1,idx+1,1);
+
+%disp([' Zero-peaks: ', num2str(length(find(ht==0)))]);
 
 %%%% WIDTHS
 FWHM = AUX.auxvars(1:end-1,1,2) + AUX.auxvars(1:end-1,idx+1,2); % add phonon+resolution width
@@ -24,54 +26,53 @@ constant = AUX.auxvars(end,idx+1,1);
 slope = AUX.auxvars(end,idx+1,2);
 
 %%% INIT
-modout=zeros(size(eng));
-if nargout==2; jacout=zeros(length(eng),3*AUX.Nph); end
+modelout=zeros(size(eng));
 
-if 1 % normal mode, ht not constrained
-	for ind=1:AUX.Nph
-		if nargout==2	% when asked for jacobian
-			[splitgauss,splitjac]=calc_splitgauss_JAC_fast(eng,cen(ind),ht(ind),w1(ind),w2(ind));
-			modout=modout+splitgauss';
-			splitjac=splitjac(:,[1 2 3]);	% cen ht wid (both widths combined)
-%			plot(eng, splitjac);
-			ind_j= (3*ind)-2;
-			jacout(:,[ind_j:ind_j+2])=splitjac;
+if nargout==2;		% last two cols are derivatives of background
+	jacout=[zeros(length(eng),3*AUX.Nph) ones(length(eng),1) eng(:)];
+end
 
-		else			% no jacobian
-			splitgauss=calc_splitgauss_JAC_fast(eng,cen(ind),ht(ind),w1(ind),w2(ind));
-			modout=modout+splitgauss';
-		end
-	end
 
-else	% heights constrained to be positive
-	for ind=1:AUX.Nph
-		if nargout==2	% when asked for jacobian
-			[splitgauss,splitjac]=calc_splitgauss_JAC_fast(eng,cen(ind),1,w1(ind),w2(ind));
-			modout=modout+splitgauss'*ht(ind)^2;
-			splitjac=splitjac*ht(ind)^2;					% scale all by height^2
-			splitjac(:,2)=splitjac(:,2)*2/ht(ind);			% scale htjac by 2/ht (so overall, 2*ht)
-			ind_j= (3*ind)-2;
-			jacout(:,[ind_j:ind_j+2])=splitjac;
+for ind=1:AUX.Nph
+	if nargout==2	% when asked for jacobian
+		[splitgauss,splitjac]=calc_splitgauss_JAC_fast(eng,cen(ind),ht(ind),w1(ind),w2(ind));
 
-		else			% no jacobian
-			splitgauss=calc_splitgauss_JAC_fast(eng,cen(ind),1,w1(ind),w2(ind));
-			modout=modout+splitgauss'*ht(ind)^2;
-		end
+		%disp(['jacsize = ', num2str(size(splitjac))]);
+		modelout=modelout+splitgauss';
+		splitjac=splitjac(:,[1 2 3]);	% cen ht wid (both widths combined)
+		ind_j= (3*ind)-2;
+		jacout(:,[ind_j:ind_j+2])=splitjac;
+
+	else			% no jacobian
+		splitgauss=calc_splitgauss_JAC_fast(eng,cen(ind),ht(ind),w1(ind),w2(ind));
+		modelout=modelout+splitgauss';
 	end
 end
+
 
 % tack on the backgrounds to the convolved splitgausses
-modout = modout + constant;% constant BG
-modout = modout + (slope*eng);% linear BG
+modelout = modelout + constant;% constant BG
+modelout = modelout + (slope*eng);% linear BG
 
-if nargout==2 % add derivatives of background to the jacobian
-	jacout = [jacout ones(length(eng),1) eng'];
-end
 
-if 0
-	hold off; errorbar(eng,SYM.ydat(AUX.mask(:,idx),idx),SYM.edat(AUX.mask(:,idx),idx),'b--')
-	hold on; plot(eng,modout,'r-','linewidth',1)
+
+if 1
+	disp(['modelout = ', num2str(size(modelout))]);
+	disp(['jacout = ', num2str(size(jacout))]);
+	validEng = AUX.mask(:,idx);
+	disp(['eng = ', num2str(size(eng))]);
+	disp(['ydat= ', num2str(size(DAT.ydat(AUX.mask(:,idx),idx)))]);
+	disp(['edat= ', num2str(size(DAT.edat(AUX.mask(:,idx),idx)))]);
+%DAT.edat(AUX.mask(:,idx),idx)
+disp('FLUSH')
+fflush(stdout);
+pause
+	hold off; errorbar(AUX.eng(validEng),DAT.ydat(validEng,idx),DAT.edat(validEng,idx),'b--')
+	hold on; plot(eng,modelout,'r-','linewidth',1,[eng(1) eng(end)],[0 0],'k--')
+	vec = axis
 	pause
 end
+%disp(['modelout = ', num2str(size(modelout))]);
+%disp(['jacout = ', num2str(size(jacout))]);
+if system_octave; fflush(stdout); end
 
-fflush(stdout);

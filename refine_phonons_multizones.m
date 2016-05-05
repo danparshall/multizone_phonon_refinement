@@ -1,97 +1,99 @@
-function SYMDAT = refine_phonons_multizones(SYMDAT);
-% SYMDAT = refine_phonons_multizones(SYMDAT)
-%	SYMDAT is an ensemble of data from a single reduced-q point.  
+function SYM = refine_phonons_multizones(SYM);
+% SYM = refine_phonons_multizones(SYM)
+%	SYM is an ensemble of data from a single reduced-q point.  
 %	
-%	Each element of SYMDAT will correspond to data from a different .sqw file,
+%	Each element of SYM will correspond to data from a different .sqw file,
 %	where each .sqw has a different experimental condition (such as different 
 %	crystal orientations, incident energies, etc.).
 %
-%	Each element of SYMDAT contains a data bundle (SQW), as well as auxilary
+%	Each element of SYM contains a data bundle (DAT), as well as auxilary
 %	information about that data (AUX).  AUX contains the variables for the
 %	model, such as peak centers/heights/wids, instrument resolution, etc.
-%	SYMDAT elements also contain Ei and chopper frequency.
+%	SYM elements also contain Ei and chopper frequency.
 %	
-%	The first element of SYMDAT also contains VARS, which is an ensemble of AUX
+%	The first element of SYM also contains VARS, which is an ensemble of AUX
 %
-%	SQW should have fields for x_dat, y_dat, e_dat (energy, intensity, error), 
+%	DAT should have fields for x_dat, y_dat, e_dat (energy, intensity, error), 
 %	as well as HKL_vals (and ideally Q_mags).
 
-% Perhaps should retitle these things:
-%	SQW 	-> DAT
-%	VARS 	-> AUXS
-%	SYMDAT	-> SYM
+%% ## !!! may have to install and load 'optim' package:
+%	pkg install -forge optim
+%	pkg load optim
+%	pkg describe -verbose optim		# lists all functions in optim
 
+debug = 1;
 
+VARS=SYM{1}.VARS;
+varsin=VARS.varsin(:);
+ydatin=VARS.ydatin(:);
+wdatin=VARS.wdatin(:);
 
-VARS=SYMDAT{1}.VARS;
-varsin=VARS.varsin;
-ydatin=VARS.ydatin;
-wdatin=VARS.wdatin;
-
-options.bounds=[VARS.bndsLO(VARS.indfree) VARS.bndsHI(VARS.indfree)];
-
-stol=0.00001;
-niter=10000;
-dp=0.00001*ones(size(varsin));
-%dFdp='calc_JAC_multiQ';
-varsin=varsin(:);
-ydatin=ydatin(:);
-wdatin=wdatin(:);
-
-const = SYMDAT{1}.VARS.allvars(end,2:end,1);
-lin = SYMDAT{1}.VARS.allvars(end,2:end,2);
 
 %display number of Brillouin zones used
 nZones = 0;
-for ind = 1:length(SYMDAT)
-	nZones = nZones + length(find(sum(SYMDAT{ind}.AUX.mask)));
+for ind = 1:length(SYM)
+	nZones = nZones + length(find(sum(SYM{ind}.AUX.mask)));
 end
 disp([' Used ' num2str(nZones) ' seperate Brillouin zones']);
 
 
+
+
 %% === fit data ===
-[funcout,varsout,cvg,iter,corp,covp,covr,stdres,Z,r2]=leasqr(SYMDAT,ydatin,varsin,...
-		'calc_DAT_multiQ',stol,niter,wdatin,dp,'calc_JAC_multiQ',options);
+
+  opts = optimset ( ...
+		'Jacobian', 'on', ...
+		'Display', 'iter');
+
+	if debug
+		disp([' size(vars):' num2str(size(varsin))]);
+		disp([' size(ydat):' num2str(size(ydatin))]);
+		disp('  OPTS : ')
+		opts
+	end
 
 
-%[funcout,varsout,cvg,iter,corp,covp,covr,stdres]=leasqr(SYMDAT,ydatin,varsin,...
-%		'calc_DAT_multiQ',stol,niter,wdatin,dp);
-
+	bounds_lo = VARS.bndsLO(VARS.indfree);
+	bounds_hi = VARS.bndsHI(VARS.indfree);
+[varsout,resnorm,resid,exitflag] = lsqnonlin( ...
+									@(vars) objective(SYM,vars,ydatin), ...
+									varsin, bounds_lo, bounds_hi, opts);
 
 
 %% === post-process ===
-	if cvg~=1;
-		disp(' WARNING in "refine_phonons_multizones" : no covergence');
-	end
+
+	report_exitflag(exitflag);
 
 	%	eliminates centers that had no data to fit
-	varsout(find(SYMDAT{1}.VARS.freevars([1:end-1],1,1) == 0)) = NaN;
+	varsout(find(SYM{1}.VARS.freevars([1:end-1],1,1) == 0)) = NaN;
 
 
 %% === update and uncertainty ===
-SYMDAT=update_AUX(SYMDAT,varsout);
-unc = calc_unc(SYMDAT);
 
+if 0
+	SYM=update_AUX(SYM,varsout);
+	unc = calc_unc(SYM);
+end
 
 
 %% === below here is just for displaying graphs and debugging
 
 % === plotting ===
 if 0
-	for sfile = 1:length(SYMDAT)
-		cen = SYMDAT{1}.VARS.allvars(1:end-1,1)
-		funcindex = cumsum(sum(SYMDAT{sfile}.AUX.mask));
-		mask = SYMDAT{sfile}.AUX.mask;
-		SYM = SYMDAT{sfile}.SQW;
-		for ind = 1:SYMDAT{sfile}.AUX.Nq
+	for sfile = 1:length(SYM)
+		cen = SYM{1}.VARS.allvars(1:end-1,1)
+		funcindex = cumsum(sum(SYM{sfile}.AUX.mask));
+		mask = SYM{sfile}.AUX.mask;
+		SYM = SYM{sfile}.DAT;
+		for ind = 1:SYM{sfile}.AUX.Nq
 			if sum(mask(:,ind))>0
 				qpoint = SYM.HKLvals(ind,:);
 				xdata = SYM.xdat(mask(:,ind),ind);
 				ydata = SYM.ydat(mask(:,ind),ind);
 				edata = SYM.edat(mask(:,ind),ind);
 %save_data(xdata',ydata',edata',qpoint);
-%SYMDAT{1}.VARS.allvars(:,ind+1,:)
-%SYMDAT{1}.AUX.freevars(:,ind+1,:)
+%SYM{1}.VARS.allvars(:,ind+1,:)
+%SYM{1}.AUX.freevars(:,ind+1,:)
 				xfit = SYM.xdat(mask(:,ind),ind);
 				if ind ~= 1
 					yfit = funcout(funcindex(ind-1)+1:funcindex(ind));
@@ -112,3 +114,14 @@ if 0
 	end
 end
 hold off
+
+function [F,J,varargout] = objective(SYM,vars,ydatin);
+
+	if nargout > 1
+		[funcout,J]=calc_model_multiQ(SYM,vars);
+	else
+		funcout = calc_model_multiQ(SYM,vars);
+	end
+	F = funcout - ydatin;
+end
+end

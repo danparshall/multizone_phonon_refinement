@@ -3,7 +3,9 @@ function SYM=generate_AUX(SYM,startvars);
 %	Each subset of data (a single DAT) has an AUX structure associated with it.
 %	AUX contains auxiliary information about that DAT.
 %
-%	startvars(Nph x 2) has [cen,wid] for each mode
+%	startvars is [cens wids heights], size = nPhonon x (nQ+2)
+%
+%
 % 	Overall structure of AUX.auxvars:
 %		Page 1:	[cens(Nph)		heights(Nph x Nq)...
 %					0			bgConst			];
@@ -21,6 +23,12 @@ for ind=1:length(SYM)
 	AUX.Nph=size(startvars,1);
 	AUX.wdat=1./DAT.edat.^2;
 
+	if isfield(DAT,'eng');
+		AUX.eng = DAT.eng;
+	else;
+		AUX.eng = DAT.xdat(:,1);
+	end
+
 	%new mask function makes mask and starting values for height fitting/decides whether to fit a height
 	[AUX.mask goodheight free_cenht] = make_mask(SYM,startvars,ind);
 
@@ -29,7 +37,8 @@ for ind=1:length(SYM)
 
 
 	goodcen=startvars(:,1);
-	goodwid=zeros(size(goodcen));
+	goodwid=startvars(:,2);
+	goodheight = startvars(:,3:end);
 
 
 	constantBackground = repmat(0,1,AUX.Nq);%min(DAT.ydat);

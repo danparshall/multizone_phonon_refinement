@@ -11,13 +11,19 @@ peak_expansion = 1;% multiple of resolution FWHM out from peak center to conside
 BG_expansion = 3;% multiple of resolution FWHM out from peak center to consider as background (excludes peak)
 peak_fraction = .4;% of all the possible places y values can exist near a peak, the minimum fraction that must exist to let that peak pass
 BG_fraction = .1;% of all the possible places y values can exist around (but not on) a peak, the minimum fraction that must exist to let that peak pass
-peak2error = 2;% ratio of peak height to error bar where if the error bar is to big, the peak is not counted...
+peak2error = -1;% ratio of peak height to error bar where if the error bar is to big, the peak is not counted...
 						%(set peak2error to any negative number to disable exclusion of proportionally high-error data)
 
 %starting variables
 DAT = SYM{sqwind}.DAT;
 centers = startvars(:,1);
-eng = DAT.xdat(:,1);
+
+if isfield(DAT,'eng')
+	eng = DAT.eng;
+else
+	eng = DAT.xdat(:,1);
+end
+
 xstep = eng(2)-eng(1);
 ydat = DAT.ydat;
 edat = DAT.edat;

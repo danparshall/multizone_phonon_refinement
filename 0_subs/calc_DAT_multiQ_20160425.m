@@ -15,14 +15,14 @@ for inds=1:length(SYM)
 	ycalc = [];
 	ind_wids=[];
 	clear AUX;
-	clear SYM;
+	clear DAT;
 
 	AUX=SYM{inds}.AUX;
-	SYM=SYM{inds}.DAT;
+	DAT=SYM{inds}.DAT;
 
-	%ycalc=zeros(size(SYM.ydat));
+	%ycalc=zeros(size(DAT.ydat));
 	N_good=length(find(AUX.mask));
-	%ycalc=zeros(size(SYM.xdat,1),AUX.Nq);
+	%ycalc=zeros(size(DAT.xdat,1),AUX.Nq);
 	jacux=zeros(N_good, numel(AUX.auxvars));
 %	jacaux=sparse( [],[],[], N_good, numel(AUX.auxvars));
 %	jacaux=full(jacaux);
@@ -30,8 +30,8 @@ for inds=1:length(SYM)
 	for ind=1:AUX.Nq
 
 	% energy used in singleQ comes from mask(:,ind)
-		%if confirm_dataset_valid(SYM.xdat(AUX.mask(:,ind),ind));
-			[modout,thisjac]=calc_JAC_singleQ(AUX,SYM,ind);
+		%if confirm_dataset_valid(DAT.xdat(AUX.mask(:,ind),ind));
+			[modout,thisjac]=calc_JAC_singleQ(AUX,DAT,ind);
 		%else
 		%	modout = zeros([1 0]);
 		%	thisjac = zeros([0 3]);
