@@ -13,7 +13,11 @@ function [funcout,jacout]=calc_model_multiQ(SYM,varsin,varargin)
 %		Each Q has ((cen-ht-wid)*nPhonon, BG)
 %		many of those values will be zero, so sparse is preferred.
 
+
 debug = 0;
+
+%% check for NaN
+%nansum_input = sum(isnan(SYM{1}.AUX.auxvars(:,1,1)))
 
 if nargin > 1
 	SYM=update_AUX(SYM,varsin);
@@ -21,6 +25,9 @@ end
 VARS=SYM{1}.VARS;
 Nph=VARS.Nph;
 funcout=[];
+
+%% check for NaN
+%nansum_aux = sum(isnan(SYM{1}.AUX.auxvars(:,1,1)))
 
 % make sparse jacobian
 jacout = sparse(length(VARS.ydatin(:)), length(VARS.varsin(:)));
@@ -63,7 +70,7 @@ for inds=1:length(SYM)
 		%		jacsize ~ 132 E+6 elements (so 1 GB ram for double-precision)
 		%
 		%	for general point:
-		%		nEng = 220, nQ = 5k (100 zones * 48), nPhonon = 240
+		%		nEng = 220, nQ = 5k (100 zones * 48), nPhonon = 240  (checked, actually 360 phonons, need to recompute)
 		%		jacsize = (220x5k) x (5k * 240)
 		%		jacsize ~ 1.3 E+12 elements (so 10 TB ram!!!!!)
 		%
@@ -71,12 +78,19 @@ for inds=1:length(SYM)
 		%		nEng 		by 3 (7k valid energy points out of 102 Q)
 		%		nPhonon 	by (1.5 possibly optimistic)
 
+		%		Gamma-point:
 		%		nEng = 70, nQ = 100, nPhonon = 40
 		%		jacsize = (70*100) x (100*40)
 		%		jacsize ~ 28 E+6
 
+		%		General-symmetry (nQ is 100 zones * 48) : 
 		%		jacsize = (70*100*48) x (100*48*200)
 		%		jacsize ~ 322 E+9 elements (2.5 TB for doubles)
+
+		%	Generally, jacobian size goes like nEng * nPhonon * (nSym * nQ)**2
+		%	going to sparse matrix reduces this even more.  Most of the array is
+		%	heights, so going to spares reduces size by a bit under a factor of
+		%	(nSym * nQ), or roughly 5,000.  Brings size back to a few GB
 
 
 		jacobian(~isfinite(jacobian))=0;%hopefully this isn't necessary
@@ -128,6 +142,14 @@ end
 
 funcout=funcout(:);
 % now combine jacobians
+%  This could be cleaned up a bit to improve the speed, see:
+%	http://www.mathworks.com/help/matlab/math/accessing-sparse-matrices.html
+%
+%	Basically, it's better to build index arrays for row, col, and then run
+%	sparse( iRows, iCols, values)
+%
+%	The following section *almost* does that
+
 
 ind_func=0;
 ind_qs=0;
@@ -176,6 +198,9 @@ for ind=1:length(SYM)
 	jacout(jrow,idxlin)=SYM{ind}.jacaux(:,indlin);			% linear BG
 end
 jacout=jacout(:,SYM{1}.VARS.indfree);
+
+
+
 %display each iteration of fitting
 if 0;
 	eng = SYM{1}.DAT.xdat(AUX.mask);

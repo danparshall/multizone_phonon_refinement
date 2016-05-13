@@ -13,6 +13,26 @@ function SYM=generate_AUX(SYM,startvars);
 %		Page 2:	[widPh(Nph)		widRes(Nph x Nq)...
 %					0			bgLinear		];
 %
+%
+%	Size estimate for BKBO off-symm:
+%		nCen = [6 * 60]
+%		nQ = 48 * 100
+%		size ~ 2 * nCen * nQ * 8 bytes = 28 MB
+
+%% fields are:
+%  [1,1] = Nq
+%  [2,1] = Nph
+%  [3,1] = wdat
+%  [4,1] = eng
+%  [5,1] = mask
+%  [6,1] = indE
+%  [7,1] = goodQ
+%  [8,1] = auxvars
+%  [9,1] = bounds_L
+%  [10,1] = bounds_H
+%  [11,1] = freevars
+%  [12,1] = indfree
+%  [13,1] = peak_asymmetry
 
 
 for ind=1:length(SYM)

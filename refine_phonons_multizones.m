@@ -29,13 +29,14 @@ ydatin=VARS.ydatin(:);
 wdatin=VARS.wdatin(:);
 
 
-%display number of Brillouin zones used
+%display number of Q-points used
 nZones = 0;
 for ind = 1:length(SYM)
 	nZones = nZones + length(find(sum(SYM{ind}.AUX.mask)));
 end
-disp([' Used ' num2str(nZones) ' seperate Brillouin zones']);
-
+disp(['  Refining with ' num2str(nZones) ' seperate Q-points']);
+%disp(' ');
+%disp(' ');
 
 
 
@@ -44,6 +45,18 @@ disp([' Used ' num2str(nZones) ' seperate Brillouin zones']);
   opts = optimset ( ...
 		'Jacobian', 'on', ...
 		'Display', 'iter');
+
+	
+	%% Check that array sizes 
+	[~,maxsize] = computer;
+	if system_octave;
+		% https://github.com/calaba/octave-3.8.2-enable-64-ubuntu-14.04
+		if sizemax < 2^31;
+			warning(' Octave should probably be recompiled to handle larger arrays, see https://github.com/calaba/octave-3.8.2-enable-64-ubuntu-14.04');
+		end
+	end
+	assert(length(varsin)*length(ydatin) < maxsize, 'The number of elements in the Jacobian is greater than the maxiumum array length that can be indexed.');
+
 
 	if debug
 		disp([' size(vars):' num2str(size(varsin))]);
@@ -65,13 +78,18 @@ disp([' Used ' num2str(nZones) ' seperate Brillouin zones']);
 	report_exitflag(exitflag);
 
 	%	eliminates centers that had no data to fit
-	varsout(find(SYM{1}.VARS.freevars([1:end-1],1,1) == 0)) = NaN;
+%	varsout(find(SYM{1}.VARS.freevars([1:end-1],1,1) == 0)) = NaN;
 
 
 %% === update and uncertainty ===
+SYM=update_AUX(SYM,varsout);
+SYM=make_VARS(SYM);
+
+%% check for NaN
+%nansum_multizone = sum(isnan(SYM{1}.AUX.auxvars(:,1,1)))
+
 
 if 0
-	SYM=update_AUX(SYM,varsout);
 	unc = calc_unc(SYM);
 end
 

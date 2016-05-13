@@ -1,4 +1,4 @@
-function SYM=make_VARS(SYM,varsin);
+function SYM=make_VARS(SYM);
 % SYM=make_VARS(SYM);
 % Assembles individual AUX.auxvars into VARS.allvars
 %
@@ -15,7 +15,6 @@ function SYM=make_VARS(SYM,varsin);
 % col [2:end] of SYM1.auxvars is 1+[1:AUX.Nq] in allvars
 % col [2:end] of SYM2.auxvars starts after that
 
-varsin=[];
 ydatin=[];
 wdatin=[];
 Nvars=[];
@@ -29,7 +28,6 @@ for ind=1:length(SYM)
 	AUX=SYM{ind}.AUX;
 	Nqs=[Nqs AUX.Nq];
 	DAT=SYM{ind}.DAT;
-	%varsin=[varsin; AUX.auxvars(AUX.indfree)];
 	ydatin=[ydatin; DAT.ydat(AUX.mask)];
 	wdatin=[wdatin; 1./(DAT.edat(AUX.mask))];
 	Nvars=[Nvars length(AUX.indfree)];
@@ -38,7 +36,7 @@ for ind=1:length(SYM)
 	genLObd=[genLObd, AUX.bounds_L(:,[2:end],:)];
 	genHIbd=[genHIbd, AUX.bounds_H(:,[2:end],:)];
 end
-VARS.varsin=varsin;
+
 VARS.ydatin=ydatin;
 VARS.wdatin=wdatin;
 
@@ -57,7 +55,8 @@ VARS.bndsHI(:,:,2)=[SYM{1}.AUX.bounds_H(:,1,2) genHIbd(:,:,2)];
 VARS.indfree=find(VARS.freevars);
 VARS.Nqs=Nqs;
 VARS.Nph=AUX.Nph;
-VARS.allvars;
+
 VARS.varsin=VARS.allvars(VARS.indfree);
+
 % connect VARS to first SYM
 SYM{1}.VARS=VARS;
