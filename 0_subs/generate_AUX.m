@@ -50,7 +50,7 @@ for ind=1:length(SYM)
 	end
 
 	%new mask function makes mask and starting values for height fitting/decides whether to fit a height
-	[AUX.mask goodheight free_cenht] = make_mask(SYM,startvars,ind);
+	[AUX.mask goodheight free_cenht] = make_aux_mask(SYM,startvars,ind);
 
 	AUX.indE=[0 cumsum(sum(AUX.mask,1))];	% index of length of good points at each Q
 	AUX.goodQ=sum(AUX.mask);
