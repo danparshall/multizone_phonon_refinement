@@ -6,6 +6,9 @@ function [modelout,jacout,varargout]=calc_JAC_singleQ(AUX,DAT,idx);
 
 if ~exist('idx'); idx=1; end
 
+%% possible speedup ????
+% eng = AUX.eng(AUX.mask(:,idx));
+
 eng = AUX.eng;
 eng=eng(:)';
 

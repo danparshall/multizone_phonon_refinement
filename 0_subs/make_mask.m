@@ -34,7 +34,7 @@ if 1
 	eMax = 75;
 	centers_free = (centers > eMin) & (centers < eMax);
 
-	margin = 1;
+	margin = 0;
 	heights_free = repmat(centers_free,1,nQ);
 	for ind = 1:nQ
 		good_eng = eng(mask(:,ind));

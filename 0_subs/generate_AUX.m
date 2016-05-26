@@ -36,7 +36,7 @@ function SYM=generate_AUX(SYM,startvars);
 
 
 for ind=1:length(SYM)
-	clear AUX;
+	clear AUX;			% start fresh AUX
 	DAT=SYM{ind}.DAT;
 
 	AUX.Nq=size(DAT.ydat,2);
@@ -90,7 +90,7 @@ for ind=1:length(SYM)
 	AUX.freevars(end,1,:) = 0;						% dummy variables
 	AUX.freevars([1:end-1],:,1) = free_cenht;		% which heights are fitted is determined in make_mask.m
 	AUX.freevars([1:end-1],[2:end],2)=0;			% res widths aren't free
-	AUX.freevars([1:end-1],1,2)=1;					% phonon widths (0/1 fixed/free)
+	AUX.freevars([1:end-1],1,2)=0;					% phonon widths (0/1 fixed/free)
 	AUX.freevars(end,[2:end],1) = 1;				% constant background (0/1 fixed/free)
 	AUX.freevars(end,[2:end],2) = 1;				% linear background (0/1 fixed/free)
 	AUX.indfree=find(AUX.freevars);
