@@ -43,8 +43,10 @@ disp(['  Refining with ' num2str(nZones) ' seperate Q-points']);
 %% === fit data ===
 
   opts = optimset ( ...
-		'Jacobian', 'on', ...
-		'Display', 'iter');
+		'Jacobian',			'on', ...
+		'DerivativeCheck',	'off',...
+		'MaxIter',			400,...
+		'Display', 			'iter');
 
 	
 	%% Check that array sizes 
@@ -94,9 +96,8 @@ if 0
 end
 
 
-%% === below here is just for displaying graphs and debugging
 
-% === plotting ===
+% === plotting and debugging ===
 if 0
 	for sfile = 1:length(SYM)
 		cen = SYM{1}.VARS.allvars(1:end-1,1)
@@ -133,13 +134,26 @@ if 0
 end
 hold off
 
+
+%% === objective function used for lsqnonlin ===
 function [F,J,varargout] = objective(SYM,vars,ydatin);
 
+	weights = 1;		% DerivativeCheck passed when using weights
+
 	if nargout > 1
-		[funcout,J]=calc_model_multiQ(SYM,vars);
+		[funcout,jacobian]=calc_model_multiQ(SYM,vars);
+
+		if weights
+			J = jacobian .* repmat(sqrt(SYM{1}.VARS.wdatin), 1, size(jacobian,2));
+		end
 	else
 		funcout = calc_model_multiQ(SYM,vars);
 	end
-	F = funcout - ydatin;
+
+	if weights
+		F = (funcout - ydatin) .* sqrt(SYM{1}.VARS.wdatin);
+	else
+		F = funcout - ydatin;
+	end
 end
 end
