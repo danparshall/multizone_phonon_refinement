@@ -28,7 +28,7 @@ nQ=size(ydat,2);
 mask = edat>0;
 
 if 1
-	goodheight = startvars(:,3:end);	% startvars is [cen(nPh,1) wid(nPh,1) heights(nPh,nQ)]
+	goodheight = startvars(:,3:end); 	% startvars is [cen(nPh,1) wid(nPh,1) heights(nPh,nQ)]
 
 	eMin = 5;
 	eMax = 75;

@@ -250,7 +250,7 @@ w=omega  ;
 ei=ei;
 
 
-if (p == 0.0d0 & R == 0.0d0 & rho == 0.0d0) 
+if (p == 0.0d0 && R == 0.0d0 & rho == 0.0d0) 
     ierr=1;
     tausqr = 0.0d0;
 end

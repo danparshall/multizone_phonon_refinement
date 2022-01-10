@@ -1,4 +1,4 @@
-function [simy,sime,htout,model,junk]=simulate_Qdat(gvars,Nsim,eng,junkscale);
+function [simy,sime,htout,startvars]=simulate_Qdat(gvars,Nsim,eng,junkscale);
 % Simulate noisy data.  Models idealized data, then adds junk/noise.
 %
 % INPUTS:
@@ -11,6 +11,8 @@ function [simy,sime,htout,model,junk]=simulate_Qdat(gvars,Nsim,eng,junkscale);
 %	simy is simulated intensity data
 %	sime is errorbars for the same
 %	htout is the "true" height of the peaks, without noise
+%	startvars : initial fitting params, such as might be generated from SNAXS
+
 %	model is the "true" intensity data, without noise
 %	junk is the actual noise
 
@@ -19,12 +21,13 @@ simy=zeros(length(eng),Nsim);
 sime=simy;
 
 htout=zeros(size(gvars,1),Nsim);
+Nph = size(gvars, 1)
 
 for inq=1:Nsim
 
 	% gvars is center, height, Lwidth, Rwidth for each peak
-	% this sets heights
-	rsim=rand([1 size(gvars,1)]);
+	% this generates random heights for each phonon at this Q-point
+	rsim=rand([Nph, 1]);
 	gvars(:,2)=rsim/max(rsim);
 
 	% model of ideal data
@@ -44,4 +47,10 @@ for inq=1:Nsim
 	sime(:,inq)=edat;
 	htout(:,inq)=gvars(:,2);
 end
+
+% now we make starting values - normally this would come from SNAXS or other calculation
+cen_noise = gvars(:, 1) + 0.05 * randn([Nph, 1]);
+ht_noise = htout + (0.1 * randn(size(htout)));
+wd_noise = 0.01 * abs(randn([Nph, 1])) ;
+startvars = [cen_noise, wd_noise, ht_noise];
 

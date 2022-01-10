@@ -208,7 +208,7 @@ if 0;
 	hold off; errorbar(eng, SYM{1}.DAT.ydat(AUX.mask), SYM{1}.DAT.edat(AUX.mask),'b--');
 	length(funcout)
 	length(eng)
-	hold on; plot(eng, funcout, 'r-', 'linewidth',1)
+	hold on; plot(eng, funcout, 'r-', 'linewidth',1);
 	pause(.01)
 end
 %toc
