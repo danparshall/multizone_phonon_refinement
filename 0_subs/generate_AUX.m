@@ -1,5 +1,5 @@
-function SYM=generate_AUX(SYM);
-% SYM=generate_AUX(SYM);
+function SYMS=generate_AUX(SYMS);
+% SYMS=generate_AUX(SYMS);
 %	Each subset of data (a single DAT) has an AUX structure associated with it.
 %	AUX contains auxiliary information about that DAT.
 %
@@ -32,13 +32,13 @@ function SYM=generate_AUX(SYM);
 %  [10,1] = bounds_H
 %  [11,1] = freevars
 %  [12,1] = indfree
-%  [13,1] = peak_asymmetry
+%  [13,1] = peak_aSYMSmetry
 
 
-for ind=1:length(SYM)
+for ind=1:length(SYMS)
 	clear AUX;
-	DAT=SYM{ind}.DAT;
-	startvars = SYM{ind}.startvars;
+	DAT=SYMS{ind}.DAT;
+	startvars = SYMS{ind}.startvars;
 
 	AUX.Nq=size(DAT.ydat,2);
 	AUX.Nph=size(startvars,1);
@@ -50,8 +50,8 @@ for ind=1:length(SYM)
 		AUX.eng = DAT.xdat(:,1);
 	end
 
-	%new mask function makes mask and starting values for height fitting/decides whether to fit a height
-	[AUX.mask goodheight free_cenht] = make_mask(SYM,startvars,ind);
+	% makes mask and starting values for height fitting, and decides whether to fit a height
+	[AUX.mask goodheight free_cenht] = make_mask(SYMS,startvars,ind);
 
 	AUX.indE=[0 cumsum(sum(AUX.mask,1))];	% index of length of good points at each Q
 	AUX.goodQ=sum(AUX.mask);
@@ -62,9 +62,12 @@ for ind=1:length(SYM)
 	goodheight = startvars(:,3:end);
 
 
-	constantBackground = repmat(0,1,AUX.Nq);%min(DAT.ydat);
+	constantBackground = repmat(0,1,AUX.Nq); %min(DAT.ydat);
 
-	reswids=merchop(SYM{ind}.Ei, SYM{ind}.chopfreq, goodcen);
+	% NOTE : we are define the resolution width when we initialize.  In principle we should update the resolution width,
+	% based on our best guess about the peak center; but getting that into the Jacobian would be really difficult.
+	% As a compromise, we just leave the reswidth fixed (not too big a deal, if our original DFT cens weren't far off).
+	reswids=merchop(SYMS{ind}.Ei, SYMS{ind}.chopfreq, goodcen);
 	reswids=repmat(reswids(:),1,AUX.Nq);
 
 	linearBackground = repmat(0,1,AUX.Nq);
@@ -96,8 +99,8 @@ for ind=1:length(SYM)
 	AUX.freevars(end,[2:end],2) = 1;				% linear background (0/1 fixed/free)
 	AUX.indfree=find(AUX.freevars);
 
-	AUX.peak_asymmetry=1.7;	%determined empirically for ARCS, using fityk
+	AUX.peak_asymmetry=1.7;		% How wide is low-energy side, relative to high-energy side.  Determined empirically for ARCS, using fityk.
 
 	% attach
-	SYM{ind}.AUX=AUX;
+	SYMS{ind}.AUX=AUX;
 end
