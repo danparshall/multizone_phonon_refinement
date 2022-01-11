@@ -56,6 +56,7 @@ for inds=1:length(SYMS)
 		% this pulls the correct indices
 		this_indE= [ AUX.indE(ind)+1 : AUX.indE(ind+1) ];		% lineup for eng
 		Qmask = AUX.mask(:,ind);
+		assert(isequal(length(this_indE),length(find(Qmask))));
 
 		%% THIS IS FRAGILE.  Ideally would build mask from DAT.ydat.  Then energy
 		%% indexing will be more transparent, and the correct rows could be pulled
@@ -103,8 +104,6 @@ for inds=1:length(SYMS)
 			disp(['Jacobian Inf at ind=' num2str(ind) ', SYMS ' num2str(inds)]);
 		end
 		% place subsect of jacobian into correct part of jacaux
-
-		assert(isequal(length(this_indE),length(find(Qmask))));
 
 		indcen=[1:Nph];
 		indwid=[1:Nph]+((Nph+1)*(AUX.Nq+1));	% Nph wids, starting after hts/cens

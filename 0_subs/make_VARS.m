@@ -31,7 +31,7 @@ for ind=1:length(SYMS)
 	ydatin=[ydatin; DAT.ydat(AUX.mask)];
 	wdatin=[wdatin; 1./(DAT.edat(AUX.mask))];
 	Nvars=[Nvars length(AUX.indfree)];
-	genvars=[genvars, AUX.auxvars(:,[2:end],:)];
+	genvars=[genvars, AUX.auxvars(:,[2:end],:)];	% heights and reswidths
 	genfree=[genfree, AUX.freevars(:,[2:end],:)];
 	genLObd=[genLObd, AUX.bounds_L(:,[2:end],:)];
 	genHIbd=[genHIbd, AUX.bounds_H(:,[2:end],:)];
@@ -40,8 +40,8 @@ end
 VARS.ydatin=ydatin;
 VARS.wdatin=wdatin;
 
-VARS.allvars(:,:,1)=[SYMS{1}.AUX.auxvars(:,1,1) genvars(:,:,1)];
-VARS.allvars(:,:,2)=[SYMS{1}.AUX.auxvars(:,1,2) genvars(:,:,2)];
+VARS.allvars(:,:,1)=[SYMS{1}.AUX.auxvars(:,1,1) genvars(:,:,1)];	% centers and heights
+VARS.allvars(:,:,2)=[SYMS{1}.AUX.auxvars(:,1,2) genvars(:,:,2)];	% widths and reswidths
 
 VARS.freevars(:,:,1)=[SYMS{1}.AUX.freevars(:,1,1) genfree(:,:,1)];
 VARS.freevars(:,:,2)=[SYMS{1}.AUX.freevars(:,1,2) genfree(:,:,2)];
