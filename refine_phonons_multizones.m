@@ -43,8 +43,10 @@ disp(['  Refining with ' num2str(nZones) ' seperate Q-points']);
 %% === fit data ===
 
   opts = optimset ( ...
-		'Jacobian', 'on', ...
-		'Display', 'iter');
+		'Jacobian',			'on', ...
+		'DerivativeCheck',	'off',...
+		'MaxIter',			400,...
+		'Display', 			'iter');
 
 	
 	%% Check that array sizes 
@@ -94,7 +96,6 @@ if 0
 end
 
 
-%% === below here is just for displaying graphs and debugging
 
 % === plotting ===
 if 1
@@ -148,11 +149,18 @@ hold off
 
 function [F,J,varargout] = objective(SYMS,vars,ydatin);
 
+	weights = 1;		% DerivativeCheck passed when using weights
+
 	if nargout > 1
 		[funcout,J]=calc_model_multiQ(SYMS,vars);
 	else
 		funcout = calc_model_multiQ(SYMS,vars);
 	end
-	F = funcout - ydatin;
+
+	if weights
+		F = (funcout - ydatin) .* sqrt(SYM{1}.VARS.wdatin);
+	else
+		F = funcout - ydatin;
+	end
 end
 end

@@ -7,7 +7,8 @@ VARS=SYMS{1}.VARS;
 VARS.allvars(VARS.indfree)=varsin;
 
 % update AUX.auxvars
-Nqs=[0 VARS.Nqs];	% leading 0 for indexing
+Nqs=[0 VARS.Nqs];	% leading 0 for indexing  VARS.Nqs is is number in each AUXVARS
+
 cNqs=cumsum(Nqs);
 
 for ind=1:length(SYMS)
