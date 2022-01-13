@@ -16,6 +16,9 @@ pkg install -forge struct
 pkg install -forge optim
 ```
 You may have to install dependencies first.
+```
+pkg install -forge struct optim statistics io
+```
 
 
 Octave has a well-known bug when using matrices containing more than 2**31 elements.  On many systems, one will have to recompile Octave and enable 64-bit indexing.  Fortunately, the heavy lifting for this has already been done.  See the following links:
@@ -29,4 +32,30 @@ sudo apt-get install libblas-dev liblapack-dev libqhull-dev libglpk-dev libqrupd
 sudo apt-get install freeglut3-dev mesa-common-dev libfltk1.3-dev
 export JAVA_HOME=/usr/lib/jvm/default-java
 '''
+
+
+
+## Octave in conda
+Within a Conda environment, Octave can be installed using:
+    `conda install -c conda-forge octave`
+
+To get the `optim` and `struct` packages, do:
+```
+    conda install -c hcc octave-optim
+    conda install -c hcc octave-struct
+```
+
+Couldn't get this working within Conda because of package dependency issues.  Blew away the environment, and installed manually.     
+```
+    apt-get install octave liboctave-dev  # the second is needed to install packages within octave
+```
+
+Then from Octave command line:
+```
+octave:1> pkg install -forge struct optim statistics io
+OpenJDK 64-Bit Server VM warning: Archived non-system classes are disabled because the java.system.class.loader property is specified (value = "org.octave.OctClassLoader"). To use archived non-system classes, this property must be not be set
+warning: doc_cache_create: unusable help text found in file 'ConfusionMatrixChart'
+warning: doc_cache_create: unusable help text found in file 'gmdistribution'
+For information about changes from previous versions of the struct package, run 'news struct'.
+```
 

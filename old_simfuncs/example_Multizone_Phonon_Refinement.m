@@ -19,6 +19,10 @@ function [fitcens,tocs,SNR]=example_Multizone_Phonon_Refinement(split,resfactor,
 %	junkscale 	- sets signal/noise ratio
 %	N_q22 		- number of Q for which data have been collected
 
+addpath('0_subs/')
+pkg load optim
+pkg load struct
+
 tic
 if nargin < 4
 	N_q22=5;
@@ -43,7 +47,8 @@ N_q52=9;
 gvars=[];
 
 center=13;
-cens=[center-(split/2) center+(split/2)]';
+split = 0.5;
+cens=[center-(split/2) center+(split/2)]'
 
 %cens = [12.95 13.05 22.95 23.05]'
 
@@ -55,19 +60,23 @@ if 1
 	eng1=[11:.25:15];eng1=eng1(:);
 	reswids=merchop(Ei,chopfreq,cens);	reswids=reswids(:)*resfactor;
 
-	% gvars is center, height, Lwidth, Rwidth for each peak
+	% gvars is center, height (generated randomly for each Q-point), Lwidth, Rwidth for each peak
 	gvars=[cens zeros(size(cens)) 0.66*reswids 0.33*reswids];
 
-	[ydat,edat,htout,model,junk]=simulate_Qdat(gvars,N_q22,eng1,junkscale);
+	[ydat,edat,htout,startvars]=simulate_Qdat(gvars,N_q22,eng1,junkscale);
 	xdat=repmat(eng1,1,size(ydat,2));	% simulating Q
 
 	DAT.xdat=xdat;
 	DAT.ydat=ydat;
 	DAT.edat=edat;
-	DAT.htout=htout;
+	DAT.HKL_vals = zeros(N_q22, 3);
+	DAT.HKL_vals(:,3) = [1:N_q22];
+	
 	SYM{1}.DAT=DAT;
 	SYM{1}.Ei=Ei;
 	SYM{1}.chopfreq=chopfreq;
+	SYM{1}.startvars = startvars;
+
 %	save('TESTDAT2','DAT');
 
 	if 1		% turn this on to add a second SYM
@@ -77,17 +86,24 @@ if 1
 		reswids=merchop(Ei,chopfreq,cens);	reswids=reswids(:);
 		gvars=[cens zeros(size(cens)) 0.66*reswids 0.33*reswids];
 
-		[ydat,edat,htout,model2,junk2]=simulate_Qdat(gvars,N_q52,eng2,junkscale);
+		[ydat,edat,htout,startvars2]=simulate_Qdat(gvars,N_q52,eng2,junkscale);
 		xdat=repmat(eng2,1,size(ydat,2));	% simulating Q
 		DAT.xdat=xdat;
 		DAT.ydat=ydat;
 		DAT.edat=edat;
 		DAT.htout=htout;
+		DAT.HKL_vals = zeros(N_q22, 3);
+		DAT.HKL_vals(:,3) = [1:N_q52];
+
 		SYM{2}.DAT=DAT;
 		SYM{2}.Ei=Ei;
 		SYM{2}.chopfreq=chopfreq;
-		junk=[junk(:); junk2(:)];
-		model=[model(:); model2(:)];
+
+		startvars2(:, 1:2) = startvars(:, 1:2)  % enforce that the predicted centers are the same in both cases
+		SYM{2}.startvars = startvars2;
+%		junk=[junk(:); junk2(:)];
+%		model=[model(:); model2(:)];
+
 	else
 		disp(' Setting SYM{2}=SYM{1}')
 		SYM{2}=SYM{1};
@@ -103,8 +119,9 @@ if system_octave;
 	fflush(stdout);
 end
 
-startvars=gvars;
-SNR=sum(model(:))/sum(abs(junk(:)));
+% startvars is [cens wids heights], size = nPhonon x (nQ+2)
+
+%SNR=sum(model(:))/sum(abs(junk(:)));
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -113,8 +130,7 @@ SNR=sum(model(:))/sum(abs(junk(:)));
 %% FITTING METHOD
 
 %% generate AUX and VARS structures prior to fitting
-%% here startvars is given, but in general it would come from a SNAXS calculation.
-SYM=generate_AUX(SYM,startvars);
+SYM=generate_AUX(SYM);
 SYM=make_VARS(SYM);
 
 % fit data

@@ -23,7 +23,7 @@ function [SYM, sim_vars] = simulate_phonon_predictions(SYM, max_Qs)
 
 %% manual, for hypothetical cubic crystal
 latt = 4.287;
-cens = [5, 7, 10, 15, 30, 31, 32];
+cens = [5, 7, 10, 15, 30, 31];
 cens = cens(:);
 
 
@@ -83,5 +83,5 @@ sim_vars = [cens(:), wids(:), heights];
 
 SYM.DAT.HKL_vals = HKL_vals;
 SYM.DAT.Q_mag = Q_mags;
-SYM.E_maxes = E_maxes;
+SYM.E_maxes = E_maxes;  % kinematic contstraint; not needed for real data.
 end  % end-function

@@ -54,9 +54,9 @@ for inq=1:N_q
 
 	% mask out inaccessible energies
 	xdat = eng(:)';
-%	xdat(xdat > SYM.E_maxes(inq)) = nan;
-%	ydat(isnan(xdat)) = nan;
-%	edat(isnan(xdat)) = nan;
+	xdat(xdat > SYM.E_maxes(inq)) = 0;
+	ydat(xdat == 0) = 0;
+	edat(xdat == 0) = 0;
 
 	% update
 	sim_x(:,inq)=xdat;
@@ -67,10 +67,11 @@ end
 SYM.DAT.ydat = sim_y;
 SYM.DAT.edat = sim_e;
 SYM.DAT.xdat = sim_x;
+SYM.DAT.eng = eng;
 
 
 % make starting variables by adding noise to true variables (since our DFT prediction is never perfect)
-cen_noise = cens .* randn(N_ph, 1) * 0.15;    % 95% of the time, start within 15% of prediction
+cen_noise = cens .* randn(N_ph, 1) * 0.05;    % 95% of the time, start within 5% of prediction
 wid_noise = sim_vars(:,2) .* (1 + randn(N_ph, 1)*0.1);
 hts_noise = heights .* (1 + randn(N_ph, N_q)*0.2);
 start_cens = sim_vars(:,1) + cen_noise;

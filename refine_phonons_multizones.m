@@ -1,17 +1,17 @@
-function SYM = refine_phonons_multizones(SYM);
-% SYM = refine_phonons_multizones(SYM)
-%	SYM is an ensemble of data from a single reduced-q point.  
+function SYMS = refine_phonons_multizones(SYMS);
+% SYMS = refine_phonons_multizones(SYMS)
+%	SYMS is an ensemble of data from a single reduced-q point.  
 %	
-%	Each element of SYM will correspond to data from a different .sqw file,
+%	Each element of SYMS will correspond to data from a different .sqw file,
 %	where each .sqw has a different experimental condition (such as different 
 %	crystal orientations, incident energies, etc.).
 %
-%	Each element of SYM contains a data bundle (DAT), as well as auxilary
+%	Each element of SYMS contains a data bundle (DAT), as well as auxilary
 %	information about that data (AUX).  AUX contains the variables for the
 %	model, such as peak centers/heights/wids, instrument resolution, etc.
-%	SYM elements also contain Ei and chopper frequency.
+%	SYMS elements also contain Ei and chopper frequency.
 %	
-%	The first element of SYM also contains VARS, which is an ensemble of AUX
+%	The first element of SYMS also contains VARS, which is an ensemble of AUX
 %
 %	DAT should have fields for x_dat, y_dat, e_dat (energy, intensity, error), 
 %	as well as HKL_vals (and ideally Q_mags).
@@ -23,7 +23,7 @@ function SYM = refine_phonons_multizones(SYM);
 
 debug = 1;
 
-VARS=SYM{1}.VARS;
+VARS=SYMS{1}.VARS;
 varsin=VARS.varsin(:);
 ydatin=VARS.ydatin(:);
 wdatin=VARS.wdatin(:);
@@ -31,8 +31,8 @@ wdatin=VARS.wdatin(:);
 
 %display number of Q-points used
 nZones = 0;
-for ind = 1:length(SYM)
-	nZones = nZones + length(find(sum(SYM{ind}.AUX.mask)));
+for ind = 1:length(SYMS)
+	nZones = nZones + length(find(sum(SYMS{ind}.AUX.mask)));
 end
 disp(['  Refining with ' num2str(nZones) ' seperate Q-points']);
 %disp(' ');
@@ -69,7 +69,7 @@ disp(['  Refining with ' num2str(nZones) ' seperate Q-points']);
 	bounds_lo = VARS.bndsLO(VARS.indfree);
 	bounds_hi = VARS.bndsHI(VARS.indfree);
 [varsout,resnorm,resid,exitflag] = lsqnonlin( ...
-									@(vars) objective(SYM,vars,ydatin), ...
+									@(vars) objective(SYMS,vars,ydatin), ...
 									varsin, bounds_lo, bounds_hi, opts);
 
 
@@ -78,50 +78,63 @@ disp(['  Refining with ' num2str(nZones) ' seperate Q-points']);
 	report_exitflag(exitflag);
 
 	%	eliminates centers that had no data to fit
-%	varsout(find(SYM{1}.VARS.freevars([1:end-1],1,1) == 0)) = NaN;
+%	varsout(find(SYMS{1}.VARS.freevars([1:end-1],1,1) == 0)) = NaN;
 
 
 %% === update and uncertainty ===
-SYM=update_AUX(SYM,varsout);
-SYM=make_VARS(SYM);
+SYMS=update_AUX(SYMS,varsout);
+SYMS=make_VARS(SYMS);
 
 %% check for NaN
-%nansum_multizone = sum(isnan(SYM{1}.AUX.auxvars(:,1,1)))
+%nansum_multizone = sum(isnan(SYMS{1}.AUX.auxvars(:,1,1)))
 
 
 if 0
-	unc = calc_unc(SYM);
+	unc = calc_unc(SYMS);
 end
 
 
 %% === below here is just for displaying graphs and debugging
 
 % === plotting ===
-if 0
-	for sfile = 1:length(SYM)
-		cen = SYM{1}.VARS.allvars(1:end-1,1)
-		funcindex = cumsum(sum(SYM{sfile}.AUX.mask));
-		mask = SYM{sfile}.AUX.mask;
-		SYM = SYM{sfile}.DAT;
-		for ind = 1:SYM{sfile}.AUX.Nq
+if 1
+	funcout = calc_model_multiQ(SYMS,varsout);
+	disp('Plotting...')
+	for ind_sym = 1:length(SYMS)
+		SYM = SYMS{ind_sym};
+
+		disp(['  ind_sym : ' num2str(ind_sym)])
+		disp('startvars :')
+		SYM.startvars
+		disp('Cens :')
+		cen = SYMS{1}.VARS.allvars(1:end-1,1)
+		funcindex = cumsum(sum(SYM.AUX.mask));
+		mask = SYM.AUX.mask;
+		DAT = SYM.DAT;
+		Nq = SYM.AUX.Nq
+		
+		for ind = 1:Nq
 			if sum(mask(:,ind))>0
-				qpoint = SYM.HKLvals(ind,:);
-				xdata = SYM.xdat(mask(:,ind),ind);
-				ydata = SYM.ydat(mask(:,ind),ind);
-				edata = SYM.edat(mask(:,ind),ind);
+				qpoint = DAT.HKL_vals(ind,:);
+				xdata = DAT.xdat(mask(:,ind),ind);
+				ydata = DAT.ydat(mask(:,ind),ind);
+				edata = DAT.edat(mask(:,ind),ind);
 %save_data(xdata',ydata',edata',qpoint);
-%SYM{1}.VARS.allvars(:,ind+1,:)
-%SYM{1}.AUX.freevars(:,ind+1,:)
-				xfit = SYM.xdat(mask(:,ind),ind);
+%SYMS{1}.VARS.allvars(:,ind+1,:)
+%SYMS{1}.AUX.freevars(:,ind+1,:)
+				xfit = DAT.xdat(mask(:,ind),ind);
 				if ind ~= 1
+%					yfit = funcout(funcindex(ind-1)+1:funcindex(ind));
 					yfit = funcout(funcindex(ind-1)+1:funcindex(ind));
 				else
+%					yfit = funcout(1:funcindex(ind));
 					yfit = funcout(1:funcindex(ind));
 				end
 	
 				hold off; errorbar(xdata,ydata,edata,'b--');
 				hold on; plot(xfit,yfit,'r-','linewidth',1,[0 80],[0 0],'k--');
-				axis([SYM.xdat(1,ind) SYM.xdat(end,ind)]);
+%				axis([DAT.xdat(1,ind) DAT.xdat(end,ind)]);
+				axis([DAT.eng(1) DAT.eng(end)]);
 				title(['column: ',num2str(ind),', q point: ',num2str(qpoint)]);
 				xlabel('Energy (meV)');
 				ylabel('Intensity (arb. units)');
@@ -133,12 +146,12 @@ if 0
 end
 hold off
 
-function [F,J,varargout] = objective(SYM,vars,ydatin);
+function [F,J,varargout] = objective(SYMS,vars,ydatin);
 
 	if nargout > 1
-		[funcout,J]=calc_model_multiQ(SYM,vars);
+		[funcout,J]=calc_model_multiQ(SYMS,vars);
 	else
-		funcout = calc_model_multiQ(SYM,vars);
+		funcout = calc_model_multiQ(SYMS,vars);
 	end
 	F = funcout - ydatin;
 end
