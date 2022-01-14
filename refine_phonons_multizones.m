@@ -158,7 +158,7 @@ function [F,J,varargout] = objective(SYMS,vars,ydatin);
 	end
 
 	if weights
-		F = (funcout - ydatin) .* sqrt(SYM{1}.VARS.wdatin);
+		F = (funcout - ydatin) .* sqrt(SYMS{1}.VARS.wdatin);
 	else
 		F = funcout - ydatin;
 	end
