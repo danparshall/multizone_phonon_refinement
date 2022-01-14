@@ -1,5 +1,5 @@
-function [mask, goodheight, free_cenht] = make_mask(SYM,startvars,sqwind)
-% [mask, goodheight, free_cenht] = make_mask(SYM,startvars,sqwind)
+function [mask, goodheight, free_cenht] = make_aux_mask(SYM,startvars,sqwind)
+% [mask, goodheight, free_cenht] = make_aux_mask(SYM,startvars,sqwind)
 %	looks through data, excludes datasets that don't have a good peak
 %	mask is a boolean, size(ydat). 1 for valid data.
 %	goodheight is finite for good peaks, 0 otherwise
@@ -144,4 +144,3 @@ end
 %this is where it is decided whether a center/height is to be fit
 goodheight = goodheight.*heights_free;		%heights that don't get fit are set to zero
 free_cenht = [centers_free heights_free];
-

@@ -51,7 +51,7 @@ for ind = 1:length(SYMS)
 	end
 
 	% makes mask and starting values for height fitting, and decides whether to fit a height
-	[AUX.mask goodheight free_cenht] = make_mask(SYMS,startvars,ind);
+	[AUX.mask goodheight free_cenht] = make_aux_mask(SYMS,startvars,ind);
 	free_cenht
 	AUX.indE = [0 cumsum(sum(AUX.mask,1))];	% index of length of good points at each Q
 	AUX.goodQ = sum(AUX.mask);
@@ -99,7 +99,7 @@ for ind = 1:length(SYMS)
 	% setup freevars field (same structure as auxvars, defines which params can be fit)
 	AUX.freevars = ones(size(AUX.auxvars));
 	AUX.freevars(end,1,:) = 0;						% placeholder variables, not actually fit
-	AUX.freevars([1:end-1],:,1) = free_cenht;		% which heights are fitted is determined in make_mask.m
+	AUX.freevars([1:end-1],:,1) = free_cenht;		% which heights are fitted is determined in make_aux_mask.m
 	AUX.freevars([1:end-1],[2:end],2)=0;			% res widths aren't free
 	AUX.freevars([1:end-1],1,2) = 1;				% phonon widths (0/1 fixed/free)
 	AUX.freevars(end,[2:end],1) = 1;				% constant background (0/1 fixed/free)
