@@ -1,7 +1,7 @@
-function [funcout,jacout]=calc_model_multiQ(SYM,varsin,varargin)
-% [funcout,jout]=calc_model_multiQ_JAC(SYM,varsin,varargin)
+function [funcout,jacout]=calc_model_multiQ(SYMS,varsin,varargin)
+% [funcout,jout]=calc_model_multiQ_JAC(SYMS,varsin,varargin)
 %	Calculates the function and Jacobian (ensemble of partial derivatives) for
-%	all Q in the SYM set.
+%	all Q in the SYMS set.
 %
 %	Size of model for a single Q is just nEng.  Size of Jacobian for a single Q
 %	is nEng x (3*nPhonon (cens,wids,hts) + BGconst + BGslope)
@@ -66,23 +66,30 @@ function [funcout,jacout]=calc_model_multiQ(SYM,varsin,varargin)
 debug = 0;
 spmat = 0;		% working on better method for sparse matrices, this switches methods
 
+%% check for NaN
+%nansum_input = sum(isnan(SYMS{1}.AUX.auxvars(:,1,1)))
 
 if nargin > 1
-	SYM=update_AUX(SYM,varsin);
+	SYMS=update_AUX(SYMS,varsin);
 end
-VARS=SYM{1}.VARS;
+VARS=SYMS{1}.VARS;
 Nph=VARS.Nph;
 funcout=[];
 
+%% check for NaN
+%nansum_aux = sum(isnan(SYMS{1}.AUX.auxvars(:,1,1)))
 
-for inds=1:length(SYM)
+% make sparse jacobian
+jacout = sparse(length(VARS.ydatin(:)), length(VARS.varsin(:)));
+
+for inds=1:length(SYMS)
 	ycalc = [];
 	ind_wids=[];
 	clear AUX;
 	clear DAT;
 
-	AUX=SYM{inds}.AUX;
-	DAT=SYM{inds}.DAT;
+	AUX=SYMS{inds}.AUX;
+	DAT=SYMS{inds}.DAT;
 
 	if spmat
 		% predeclare sparse jacobian matrix for this aux
@@ -103,22 +110,56 @@ for inds=1:length(SYM)
 		% The objective function is a stack of nEng for each Q.  So for each Q,
 		% this pulls the correct indices
 		this_indE= [ AUX.indE(ind)+1 : AUX.indE(ind+1) ];		% lineup for eng
-		Qmask = AUX.mask(:,ind);			% mask of good energies for this Q
+		Qmask = AUX.mask(:,ind);
+		assert(isequal(length(this_indE),length(find(Qmask))));
+
+		%% THIS IS FRAGILE.  Ideally would build mask from DAT.ydat.  Then energy
+		%% indexing will be more transparent, and the correct rows could be pulled
+		%% using find(mask).  Only issue is that requires generating the entire
+		%% jacobian, which may run into memory limits.
+
+		%% estimating jacobian size:
+		%
+		%	for gamma point:
+		%		nEng = 220, nQ = 102, nPhonon = 60
+		% 		jacsize = (220 * 102) x (102 * 60)
+		%		jacsize ~ 132 E+6 elements (so 1 GB ram for double-precision)
+		%
+		%	for general point:
+		%		nEng = 220, nQ = 5k (100 zones * 48), nPhonon = 240  (checked, actually 360 phonons, need to recompute)
+		%		jacsize = (220x5k) x (5k * 240)
+		%		jacsize ~ 1.3 E+12 elements (so 10 TB ram!!!!!)
+		%
+		%	Selecting only the active-point subset reduces the size of 
+		%		nEng 		by 3 (7k valid energy points out of 102 Q)
+		%		nPhonon 	by (1.5 possibly optimistic)
+
+		%		Gamma-point:
+		%		nEng = 70, nQ = 100, nPhonon = 40
+		%		jacsize = (70*100) x (100*40)
+		%		jacsize ~ 28 E+6
+
+		%		General-SYMSmetry (nQ is 100 zones * 48) : 
+		%		jacsize = (70*100*48) x (100*48*200)
+		%		jacsize ~ 322 E+9 elements (2.5 TB for doubles)
+
+		%	Generally, jacobian size goes like nEng * nPhonon * (nSYMS * nQ)**2
+		%	going to sparse matrix reduces this even more.  Most of the array is
+		%	heights, so going to spares reduces size by a bit under a factor of
+		%	(nSYMS * nQ), or roughly 5,000.  Brings size back to a few GB
 
 
-%		jacobian(~isfinite(jacobian))=0;%hopefully this isn't necessary
+		jacobian(~isfinite(jacobian))=0;%hopefully this isn't necessary
 		%model(~isfinite(model))=0;%hopefully this isn't necessary
 
 		ycalc = [ycalc model(Qmask)];
 		if ~isempty(find(isnan(jacobian)))
-			disp(['Jacobian NaN at ind=' num2str(ind) ', SYM ' num2str(inds)]);
+			disp(['Jacobian NaN at ind=' num2str(ind) ', SYMS ' num2str(inds)]);
 		end
 		if ~isempty(find(isinf(jacobian)))
-			disp(['Jacobian Inf at ind=' num2str(ind) ', SYM ' num2str(inds)]);
+			disp(['Jacobian Inf at ind=' num2str(ind) ', SYMS ' num2str(inds)]);
 		end
 		% place subsect of jacobian into correct part of jacaux
-
-		assert(isequal(length(this_indE),length(find(Qmask))));
 
 		indcen=[1:Nph];
 		indwid=[1:Nph]+((Nph+1)*(AUX.Nq+1));	% Nph wids, starting after hts/cens
@@ -169,8 +210,8 @@ for inds=1:length(SYM)
 
 
 	ind_wids=[ind_wids indwid(1)];
-	SYM{inds}.funaux=ycalc';
-	SYM{inds}.jacaux=jacaux;
+	SYMS{inds}.funaux=ycalc';
+	SYMS{inds}.jacaux=jacaux;
 	funcout=[funcout; ycalc'];%funcout=[funcout; ycalc(AUX.mask)];
 
 	if 0
@@ -203,12 +244,10 @@ ind_func=0;
 ind_qs=0;
 %ind_wids;
 Nqs=[0 VARS.Nqs];
-for ind=1:length(SYM)
+for ind=1:length(SYMS)
 	%row of jacout
-	ind_func=[ind_func length(find(SYM{ind}.AUX.mask))];
-	jRow=[ind_func(ind)+1 : sum(ind_func)]';
-
-
+	ind_func=[ind_func length(find(SYMS{ind}.AUX.mask))];
+	jrow=[ind_func(ind)+1 : sum(ind_func)];
 
 	%columns of jacaux
 	indcen = [1:Nph];
@@ -233,56 +272,33 @@ for ind=1:length(SYM)
 
 	if debug
 		disp(' ')
-		disp(['  Jacobian assembly, index = ', num2str(ind)]);
-		disp(['    size(jacaux) : ' num2str(size(SYM{ind}.jacaux)) ])
-		disp(['    numel(jacaux) : ' num2str(numel(SYM{ind}.jacaux))]);
-		length(jRow)
+		ind
+		size(jacout)
+		disp([' jacaux : ' num2str(size(SYMS{ind}.jacaux)) ])
+		length(jrow)
 		idxcen
 		indcen
 		
 	end
 
-	if spmat
-		%% new method, only creates jacobian once
-
-
-%	jRow = find(SYM{ind}.AUX.mask);
-
-		jCol = [idxcen idxwid idxht idxconst idxlin];
-		iAux = [indcen indwid indht indconst indlin];
-
-
-		length(jCol)
-		length(iAux)
-size(SYM{ind}.jacaux,1)
-%REPMAT THIS
-		jRows = repmat(jRow, size(SYM{ind}.jacaux,2), 1);
-		size(jRows)
-
-
-		jacout = sparse(jRows, jCols, reshape(SYM{ind}.jacaux(:,iAux),[],1) );
-
-	else
-		%% old method
-		jacout(jRow,idxcen)=SYM{ind}.jacaux(:,indcen);			% centers
-		jacout(jRow,idxwid)=SYM{ind}.jacaux(:,indwid);			% widths
-		jacout(jRow,idxht)=SYM{ind}.jacaux(:,indht);			% heights
-		jacout(jRow,idxconst)=SYM{ind}.jacaux(:,indconst);		% constant BG
-		jacout(jRow,idxlin)=SYM{ind}.jacaux(:,indlin);			% linear BG
-	end
+	jacout(jrow,idxcen)=SYMS{ind}.jacaux(:,indcen);			% centers
+	jacout(jrow,idxwid)=SYMS{ind}.jacaux(:,indwid);			% widths
+	jacout(jrow,idxht)=SYMS{ind}.jacaux(:,indht);			% heights
+	jacout(jrow,idxconst)=SYMS{ind}.jacaux(:,indconst);		% constant BG
+	jacout(jrow,idxlin)=SYMS{ind}.jacaux(:,indlin);			% linear BG
 end
-jacout=jacout(:,SYM{1}.VARS.indfree);
+jacout=jacout(:,SYMS{1}.VARS.indfree);
 
 
 
 %display each iteration of fitting
 if 0;
-	eng = SYM{1}.DAT.xdat(AUX.mask);
-	%semilogy(SYM{1}.DAT.xdat(AUX.mask),SYM{1}.DAT.ydat(AUX.mask),'bo',SYM{1}.DAT.xdat(AUX.mask),funcout,'ro')
-	hold off; errorbar(eng, SYM{1}.DAT.ydat(AUX.mask), SYM{1}.DAT.edat(AUX.mask),'b--');
+	eng = SYMS{1}.DAT.xdat(AUX.mask);
+	%semilogy(SYMS{1}.DAT.xdat(AUX.mask),SYMS{1}.DAT.ydat(AUX.mask),'bo',SYMS{1}.DAT.xdat(AUX.mask),funcout,'ro')
+	hold off; errorbar(eng, SYMS{1}.DAT.ydat(AUX.mask), SYMS{1}.DAT.edat(AUX.mask),'b--');
 	length(funcout)
 	length(eng)
-	hold on; plot(eng, funcout, 'r-', 'linewidth',1)
+	hold on; plot(eng, funcout, 'r-', 'linewidth',1);
 	pause(.01)
 end
 %toc

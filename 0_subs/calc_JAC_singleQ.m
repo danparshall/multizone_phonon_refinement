@@ -12,16 +12,16 @@ if ~exist('idx'); idx=1; end
 eng = AUX.eng;
 eng=eng(:)';
 
-cen=AUX.auxvars(1:end-1,1,1);
-ht=AUX.auxvars(1:end-1,idx+1,1);
+cen=AUX.auxvars(1:end-1, 1, 1);
+ht=AUX.auxvars(1:end-1, idx+1, 1);
 
 %disp([' Zero-peaks: ', num2str(length(find(ht==0)))]);
 
 %%%% WIDTHS
-FWHM = AUX.auxvars(1:end-1,1,2) + AUX.auxvars(1:end-1,idx+1,2); % add phonon+resolution width
-asymm=AUX.peak_asymmetry;
-w1= FWHM * asymm/(asymm+1);
-w2= FWHM * 1/(asymm+1);
+FWHM = AUX.auxvars(1:end-1, 1, 2) + AUX.auxvars(1:end-1, idx+1, 2); % add phonon+resolution width
+asymm = AUX.peak_asymmetry;
+w1 = FWHM * asymm/(asymm+1);
+w2 = FWHM * 1/(asymm+1);
 
 % Background
 constant = AUX.auxvars(end,idx+1,1);
@@ -38,19 +38,19 @@ end
 for ind=1:AUX.Nph
 	if nargout==2	% when asked for jacobian
 %cen(ind),ht(ind),w1(ind),w2(ind)
-		[splitgauss,splitjac]=calc_splitgauss_JAC_fast(eng,cen(ind),ht(ind),w1(ind),w2(ind));
+		[splitgauss,splitjac] = calc_splitgauss_JAC_fast(eng,cen(ind),ht(ind),w1(ind),w2(ind));
 
 		%disp(['jacsize = ', num2str(size(splitjac))]);
 %		disp([' modsize = ', num2str(size(modelout))]);
 %		disp([' gaussize = ', num2str(size(splitgauss))]);
-		modelout=modelout+splitgauss';
-		splitjac=splitjac(:,[1 2 3]);	% cen ht wid (both widths combined)
-		ind_j= (3*ind)-2;
+		modelout = modelout+splitgauss';
+		splitjac = splitjac(:,[1 2 3]);	% cen ht wid (both widths combined)
+		ind_j = (3*ind)-2;
 		jacout(:,[ind_j:ind_j+2])=splitjac;
 
 	else			% no jacobian
-		splitgauss=calc_splitgauss_JAC_fast(eng,cen(ind),ht(ind),w1(ind),w2(ind));
-		modelout=modelout+splitgauss';
+		splitgauss = calc_splitgauss_JAC_fast(eng,cen(ind),ht(ind),w1(ind),w2(ind));
+		modelout = modelout+splitgauss';
 	end
 end
 

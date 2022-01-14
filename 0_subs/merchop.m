@@ -11,7 +11,7 @@ global x0 xa x1 x2 wa_mm ha_mm wa ha pslit dslat radius rho tjit mod_type s thet
 insterr=0;
 warning off MATLAB:divideByZero
 
-if length(frequency) > 1 & length(ei) > 1
+if length(frequency) > 1 && length(ei) > 1
      disp('easy tiger! set energy range to 0')
      insterr=1;
      return

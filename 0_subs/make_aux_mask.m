@@ -1,9 +1,9 @@
-function [mask, goodheight, free_cenht] = make_mask(SYM,startvars,sqwind)
-% [mask, goodheight, free_cenht] = make_mask(SYM,startvars,sqwind)
+function [mask, goodheight, free_cenht] = make_aux_mask(SYM,startvars,sqwind)
+% [mask, goodheight, free_cenht] = make_aux_mask(SYM,startvars,sqwind)
 %	looks through data, excludes datasets that don't have a good peak
 %	mask is a boolean, size(ydat). 1 for valid data.
 %	goodheight is finite for good peaks, 0 otherwise
-%	free_cenht is (nPh x nQ+1), indicates which phonons/heights may be fit
+%	free_cenht is (N_ph x N_q+1), indicates which phonons/heights may be fit
 
 
 %starting variables
@@ -20,23 +20,23 @@ xstep = eng(2)-eng(1);
 ydat = DAT.ydat;
 edat = DAT.edat;
 
-nPh=length(centers);
-nQ=size(ydat,2);
+N_ph=length(centers);
+N_q=size(ydat,2);
 
 
 %excludes all y values where there is no data
 mask = edat>0;
 
 if 1
-	goodheight = startvars(:,3:end);	% startvars is [cen(nPh,1) wid(nPh,1) heights(nPh,nQ)]
+	goodheight = startvars(:,3:end); 	% startvars is [cen(N_ph,1) wid(N_ph,1) heights(N_ph,N_q)]
 
 	eMin = 5;
 	eMax = 75;
 	centers_free = (centers > eMin) & (centers < eMax);
 
-	margin = 0;
-	heights_free = repmat(centers_free,1,nQ);
-	for ind = 1:nQ
+	margin = 1;
+	heights_free = repmat(centers_free,1,N_q);
+	for ind = 1:N_q
 		good_eng = eng(mask(:,ind));
 		heights_free(:,ind) = (centers > good_eng(1)-margin) & (centers < good_eng(end)+margin);
 	end
@@ -53,15 +53,15 @@ else
 							%(set peak2error to any negative number to disable exclusion of proportionally high-error data)
 
 
-goodheight = zeros(nPh,nQ);
-heights_free = ones(nPh,nQ);
-centers_free = ones(nPh,1);
+goodheight = zeros(N_ph,N_q);
+heights_free = ones(N_ph,N_q);
+centers_free = ones(N_ph,1);
 
 
 
 	%finds index of energy level closest to peak center
 	eindex = [];
-	for ind = 1:nPh
+	for ind = 1:N_ph
 		thisval=find(abs(eng-centers(ind))<=xstep/2);
 		if isempty(thisval)
 			disp(' WARNING in "make_mask" : phonon center out of energy range');
@@ -80,7 +80,7 @@ centers_free = ones(nPh,1);
 	eBins = [eBins length(eng)];
 	eBins = round(eBins);
 	peaksize = [];%peakSize is the distance (in meV) from a peak that the mask looks (should be within a magnitude of resolution width probably)
-	for ind = 1:nPh
+	for ind = 1:N_ph
 		peaksize = [peaksize peak_expansion*merchop(SYM{sqwind}.Ei,SYM{sqwind}.chopfreq,centers(ind))];
 	end
 
@@ -91,7 +91,7 @@ centers_free = ones(nPh,1);
 	ebar(isnan(ebar)) = 0;
 
 
-	for iCen = 1:nPh
+	for iCen = 1:N_ph
 		%creates index for area on peak
 		if peaksize(iCen)<eng(eindex(iCen))-eng(eBins(1))
 			edexL1 = eindex(iCen)-round(peaksize(iCen)/xstep);
@@ -118,7 +118,7 @@ centers_free = ones(nPh,1);
 		peak_possible = length(edexL1:edexH1);% maximum possible number of points on the "peak"
 		BG_possible = length([edexL2:edexL1,edexH1:edexL2]);% maximum possible number of points in the "background"
 
-		for pho = 1:nQ
+		for pho = 1:N_q
 			%excludes any data that has too low a density of points on a peak/ near a peak
 			peak_points = sum(mask(edexL1:edexH1,pho));% actual # of good points on peak
 			BGpoints = sum(mask([edexL2:edexL1,edexH1:edexL2],pho));% actual # of good points in BG
@@ -144,4 +144,3 @@ end
 %this is where it is decided whether a center/height is to be fit
 goodheight = goodheight.*heights_free;		%heights that don't get fit are set to zero
 free_cenht = [centers_free heights_free];
-
