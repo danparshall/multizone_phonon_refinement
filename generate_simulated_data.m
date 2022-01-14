@@ -1,5 +1,9 @@
 function SYMS = generate_simulated_data()
 
+addpath('0_subs/');
+if system_octave
+    pkg load optim
+end
 
 max_Qs = 20;
 
