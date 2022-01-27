@@ -1,16 +1,19 @@
 function [SYM,startvars,true_y] = simulate_data_from_predictions(SYM, sim_vars, junk_scale)
 
 
-wid_ratio = 0.33;
-function [modelout, jacout] = sim_escan(eng, cens, wids, heights, wid_ratio)
+
+
+
+
+function [modelout, jacout] = sim_escan(eng, cens, heights, w1, w2)
     eng=eng(:)';
     modelout=zeros(size(eng));
 
-    hwhm_1 = wids*wid_ratio;
-    hwhm_2 = wids*(1-wid_ratio);
+%    hwhm_1 = wids*wid_ratio;
+%    hwhm_2 = wids*(1-wid_ratio);
 
     for ind=1:N_ph;
-        [splitgauss,splitjac]=calc_splitgauss_JAC_fast(eng, cens(ind), heights(ind), hwhm_1(ind), hwhm_2(ind));
+        [splitgauss,splitjac]=calc_splitgauss_JAC_fast(eng, cens(ind), heights(ind), w1(ind), w2(ind));
         modelout = modelout+splitgauss';
     end
 end
@@ -24,7 +27,11 @@ cens = sim_vars(:,1);
 
 %% resolution-adjusted widths
 reswids=merchop(SYM.Ei, SYM.chopfreq, cens);
-wids = sqrt(sim_vars(:,2).^2 + reswids.^2);
+FWHM = sim_vars(:,2) + reswids;
+asymm = 1.7;
+w1 = FWHM * asymm/(asymm+1);
+w2 = FWHM * 1/(asymm+1);
+
 
 heights = sim_vars(:, 3:end);
 
@@ -40,7 +47,7 @@ for inq=1:N_q
 
 	% model of ideal data
     hts = heights(:, inq);   % heights at just this Q
-	[model] = sim_escan(eng, cens, wids, hts, wid_ratio);
+	[model] = sim_escan(eng, cens, hts, w1, w2);
     true_y(:,inq) = model;
 
 	% generate noise
@@ -70,10 +77,18 @@ SYM.DAT.xdat = sim_x;
 SYM.DAT.eng = eng;
 
 
-% make starting variables by adding noise to true variables (since our DFT prediction is never perfect)
-cen_noise = cens .* randn(N_ph, 1) * 0.05;    % 95% of the time, start within 5% of prediction
-wid_noise = sim_vars(:,2) .* (1 + randn(N_ph, 1)*0.1);
-hts_noise = heights .* (1 + randn(N_ph, N_q)*0.2);
+if 0
+	% make starting variables by adding noise to true variables (since our DFT prediction is never perfect)
+	cen_noise = cens .* randn(N_ph, 1) * 0.05;    % 95% of the time, start within 5% of prediction
+	wid_noise = sim_vars(:,2) .* (1 + randn(N_ph, 1)*0.1);
+	hts_noise = heights .* (1 + randn(N_ph, N_q)*0.2);
+
+else
+	cen_noise = zeros(N_ph, 1);
+	wid_noise = zeros(N_ph, 1);
+	hts_noise = zeros(N_ph, N_q);
+end  % end noise addition
+
 start_cens = sim_vars(:,1) + cen_noise;
 start_wids = sim_vars(:,2) + wid_noise;
 start_hts = heights + hts_noise;
