@@ -2,15 +2,9 @@ function [SYM,startvars,true_y] = simulate_data_from_predictions(SYM, sim_vars, 
 
 
 
-
-
-
 function [modelout, jacout] = sim_escan(eng, cens, heights, w1, w2)
     eng=eng(:)';
     modelout=zeros(size(eng));
-
-%    hwhm_1 = wids*wid_ratio;
-%    hwhm_2 = wids*(1-wid_ratio);
 
     for ind=1:N_ph;
         [splitgauss,splitjac]=calc_splitgauss_JAC_fast(eng, cens(ind), heights(ind), w1(ind), w2(ind));
