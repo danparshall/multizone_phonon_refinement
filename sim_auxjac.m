@@ -1,31 +1,24 @@
-function viz_jacobian()
 
-n_atoms = 5;
-n_cens = 3*n_atoms;
-n_Qs = 4;
-eng = [1:20];
-n_eng = length(eng);
+function auxjac = sim_auxjac(n_cens, nQ, nE)
 
-if 0
-    auxvars = zeros(n_cens+1, n_Qs+1, 2);
+    auxvars = zeros(n_cens+1, nQ+1, 2);
     auxvars(:, 1, :) = 1;               % centers and widths
     auxvars(end, 1, :) = 0;             % placeholder vars
     auxvars(1:end-1, 2:end, 2) = 0;     % resolution widths
     %auxvars
     disp(['auxvars : ', num2str(size(auxvars))])
 
-    nnz = n_Qs * (3*n_cens + 2) * n_eng;
-    n_jrows = (n_Qs*n_eng);
+    nnz = nQ * (3*n_cens + 2) * nE;
+    n_jrows = (nQ*nE);
     n_jcols = numel(auxvars);
-    disp(['Final jacobian should have size ' num2str(n_jrows) 'x' num2str(n_jcols) ', and ' num2str(nnz) ' nonzero'])
-
+    disp(['Simulated jacobian should have size ' num2str(n_jrows) 'x' num2str(n_jcols) ', and ' num2str(nnz) ' nonzero'])
 
     jac_rows = [];
     jac_cols = [];
 
-    for i_Q = 1:n_Qs
-        startrow = ((i_Q-1) * n_eng) + 1;
-        rows_active = [startrow : startrow + n_eng - 1]';
+    for i_Q = 1:nQ
+        startrow = ((i_Q-1) * nE) + 1;
+        rows_active = [startrow : startrow + nE - 1]';
     %    disp('')
     %    disp(['num rows : ', num2str(length(rows_active))])
 
@@ -54,10 +47,5 @@ if 0
     vals = ones(nnz,1);
     density = nnz / (n_jrows * n_jcols)
 
-    jacobian = sparse(jac_rows, jac_cols, vals, n_jrows, n_jcols);
-
-else
-    jacobian = sim_auxjac(n_cens, n_Qs, n_eng);
-end % end if
-spy(jacobian)
-end % end-function
+    auxjac = sparse(jac_rows, jac_cols, vals, n_jrows, n_jcols);
+end % end subfunction
