@@ -118,7 +118,7 @@ for inds=1:length(SYMS)
 		%% using find(mask).  Only issue is that requires generating the entire
 		%% jacobian, which may run into memory limits.
 
-		%% estimating jacobian size:
+		%% estimating jacobian size (double is 8 bytes/element):
 		%
 		%	for gamma point:
 		%		nEng = 220, nQ = 102, nPhonon = 60

@@ -9,8 +9,8 @@ if ~exist('idx'); idx=1; end
 %% possible speedup ????
 % eng = AUX.eng(AUX.mask(:,idx));
 
-eng = AUX.eng;
-eng=eng(:)';
+eng = AUX.eng(:)';
+%eng=eng(:)';
 
 cen=AUX.auxvars(1:end-1, 1, 1);
 ht=AUX.auxvars(1:end-1, idx+1, 1);

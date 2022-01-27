@@ -35,7 +35,11 @@ function SYMS=generate_AUX(SYMS);
 %  [13,1] = peak_aSYMSmetry
 
 
+n_cens = size(SYMS{1}.startvars, 1);
+
 for ind = 1:length(SYMS)
+	disp('')
+	disp(["STARTING AUX FOR SYM : " num2str(ind)])
 	clear AUX;
 	DAT = SYMS{ind}.DAT;
 	startvars = SYMS{ind}.startvars;
@@ -51,8 +55,8 @@ for ind = 1:length(SYMS)
 	end
 
 	% makes mask and starting values for height fitting, and decides whether to fit a height
+	% mask is same dimensions as data
 	[AUX.mask goodheight free_cenht] = make_aux_mask(SYMS,startvars,ind);
-	free_cenht
 	AUX.indE = [0 cumsum(sum(AUX.mask,1))];	% index of length of good points at each Q
 	AUX.goodQ = sum(AUX.mask);
 
@@ -80,7 +84,7 @@ for ind = 1:length(SYMS)
 			    			0 linearBackground];
 
 	% set BOUNDS (have the same structure as auxvars)
-	AUX.bounds_L = 0.01 * ones(size(AUX.auxvars));
+	AUX.bounds_L = 0.001 * ones(size(AUX.auxvars));
 	AUX.bounds_L([1:end-1],1,1) = min(DAT.xdat(:,1));		% min center
 
 	AUX.bounds_H = ones(size(AUX.auxvars));
@@ -89,12 +93,12 @@ for ind = 1:length(SYMS)
 	AUX.bounds_H(:,[2:end],1) = 1.5*max(max(DAT.ydat));		% maxheight is 1.5x maxdata
 %	AUX.bounds_H(:,:,2) = Inf;								% no max wid
 
-	AUX.bounds_H([1:end-1],[2:end],2) = repmat(10*reswids(:,1), 1, AUX.Nq);					% wids, set to 10x the resolution
+	AUX.bounds_H([1:end-1],[2:end],2) = repmat(10*abs(reswids(:,1)), 1, AUX.Nq);		% wids, set to 10x the resolution (abs bc non-kinematic become negative)
 	AUX.bounds_H(end,[2:end],1) = max(max(DAT.ydat));		% constant BG max set to max of observed counts
 
-	delta_counts_each_Q = max(DAT.ydat) - min(DAT.ydat);
+	delta_counts = max(max(DAT.ydat)) - min(min(DAT.ydat));
 	delta_energy = max(AUX.eng) - min(AUX.eng);
-	AUX.bounds_H(end,[2:end],2) = delta_counts_each_Q/delta_energy;	% linear BG max
+	AUX.bounds_H(end,[2:end],2) = delta_counts/delta_energy;	% linear BG max
 
 	% setup freevars field (same structure as auxvars, defines which params can be fit)
 	AUX.freevars = ones(size(AUX.auxvars));
