@@ -28,9 +28,10 @@ N_q=size(ydat,2);
 mask = edat>0;
 
 if 1
+	# TODO : this has 3 magic numbers.  Need to make sure they're turned into documented variables
 	goodheight = startvars(:,3:end); 	% startvars is [cen(N_ph,1) wid(N_ph,1) heights(N_ph,N_q)]
 
-	eMin = 5;
+	eMin = 4;
 	eMax = 75;
 	centers_free = (centers > eMin) & (centers < eMax);
 
@@ -45,17 +46,17 @@ else
 	%% peak selection written by Paul Neves
 
 	%User editable values
-	peak_expansion = 1;% multiple of resolution FWHM out from peak center to consider "peak"
-	BG_expansion = 3;% multiple of resolution FWHM out from peak center to consider as background (excludes peak)
-	peak_fraction = .4;% of all the possible places y values can exist near a peak, the minimum fraction that must exist to let that peak pass
-	BG_fraction = .1;% of all the possible places y values can exist around (but not on) a peak, the minimum fraction that must exist to let that peak pass
-	peak2error = -1;% ratio of peak height to error bar where if the error bar is to big, the peak is not counted...
+	peak_expansion = 1;		% multiple of resolution FWHM out from peak center to consider "peak"
+	BG_expansion = 3;		% multiple of resolution FWHM out from peak center to consider as background (excludes peak)
+	peak_fraction = .4;		% of all the possible places y values can exist near a peak, the minimum fraction that must exist to let that peak pass
+	BG_fraction = .1;		% of all the possible places y values can exist around (but not on) a peak, the minimum fraction that must exist to let that peak pass
+	peak2error = -1;		% ratio of peak height to error bar where if the error bar is too big, the peak is not counted...
 							%(set peak2error to any negative number to disable exclusion of proportionally high-error data)
 
 
-goodheight = zeros(N_ph,N_q);
-heights_free = ones(N_ph,N_q);
-centers_free = ones(N_ph,1);
+	goodheight = zeros(N_ph,N_q);
+	heights_free = ones(N_ph,N_q);
+	centers_free = ones(N_ph,1);
 
 
 
@@ -64,7 +65,7 @@ centers_free = ones(N_ph,1);
 	for ind = 1:N_ph
 		thisval=find(abs(eng-centers(ind))<=xstep/2);
 		if isempty(thisval)
-			disp(' WARNING in "make_mask" : phonon center out of energy range');
+			disp(' WARNING in "make_aux_mask" : phonon center out of energy range');
 		else
 			eindex = [eindex thisval];
 		end
@@ -139,8 +140,8 @@ centers_free = ones(N_ph,1);
 			centers_free(iCen) = 0;
 		end
 	end
-end
+end  % end peak selection
 
 %this is where it is decided whether a center/height is to be fit
-goodheight = goodheight.*heights_free;		%heights that don't get fit are set to zero
+%goodheight = goodheight.*heights_free;		%heights that don't get fit are set to zero
 free_cenht = [centers_free heights_free];
