@@ -25,7 +25,7 @@ function [SYM, sim_vars] = simulate_phonon_predictions(SYM, max_Qs)
 latt = 4.287;
 cens = [5, 7, 10, 15, 30, 31];
 cens = cens(:);
-
+cens = cens + 0.00005;
 
 E_i = SYM.Ei;
 N_ph = length(cens);
@@ -52,7 +52,7 @@ for H = 0:max_bzone
             k_f_max = calc_kfmax(Q_mag, k_i);
 
             E_max = calc_mom_to_eng(k_f_max);
-            poss_phonons = cens < E_max;
+            poss_phonons = cens < (E_max + 2);
 
             if (Q_mag < Q_max) && (Q_mag > 0) && sum(poss_phonons) > 0
                 HKL_vals = [HKL_vals; poss];
@@ -70,7 +70,7 @@ rand('seed', 42);               % set random seed, for data reproducibility
 % use only up to max_Qs points
 if length(Q_mags) > max_Qs
     rand_idx = randperm(length(Q_mags))(1:max_Qs);
-    HKL_vals = HKL_vals(:, rand_idx);
+    HKL_vals = HKL_vals(rand_idx, :);
     Q_mags = Q_mags(rand_idx);
     mask = mask(:, rand_idx);
 end
