@@ -35,6 +35,9 @@ for ind=1:length(SYMS)
 	genfree=[genfree, AUX.freevars(:,[2:end],:)];
 	genLObd=[genLObd, AUX.bounds_L(:,[2:end],:)];
 	genHIbd=[genHIbd, AUX.bounds_H(:,[2:end],:)];
+
+	% make mapping from indices in auxvars to indices in allvars
+	AUX.ind_vars = zeros(size(AUX.auxvars));
 end
 
 VARS.ydatin=ydatin;
