@@ -44,24 +44,24 @@ for i_sym = 1:n_sym
         if debug; disp(["    Building jacobian using data from Q-point : " num2str(iq)]); end;
 
         % indices of AUX jacobian data for this Q
-        aux_icens = inds_jac(find(freevars(:, 1, 1)), 1, 1)(:);
-        aux_iwids = inds_jac(find(freevars(:, 1, 2)), 1, 2)(:);
-        aux_ihts  = inds_jac(find(freevars(:, 1+iq, 1)), 1+iq, 1)(:);
-        aux_ires  = inds_jac(find(freevars(:, 1+iq, 2)), 1+iq, 2)(:);
+        aux_icens = inds_jac(find(freevars(:, 1, 1)), 1, 1);
+        aux_iwids = inds_jac(find(freevars(:, 1, 2)), 1, 2);
+        aux_ihts  = inds_jac(find(freevars(:, 1+iq, 1)), 1+iq, 1);
+        aux_ires  = inds_jac(find(freevars(:, 1+iq, 2)), 1+iq, 2);
         aux_var = [aux_icens; aux_iwids; aux_ihts; aux_ires]';      % columns / variables
-        aux_eng = SYM.AUX.eng_inds(find(mask(:, iq)), iq)(:);       % rows / energies
-        aux_cols = repmat(aux_var, length(aux_eng), 1)(:);
-        aux_rows = repmat(aux_eng, length(aux_var), 1)(:);
+        aux_eng = SYM.AUX.eng_inds(find(mask(:, iq)), iq);       % rows / energies
+        aux_cols = repmat(aux_var, length(aux_eng), 1); aux_cols = aux_cols(:);
+        aux_rows = repmat(aux_eng, length(aux_var), 1);
         aux_inds = sub2ind(size(SYM.AUX.auxjac), aux_rows, aux_cols);
 %        if debug; disp(["length(aux_inds) :", num2str(length(aux_inds))]); end;
 
 
         % indices for full jacobian
         rows_active = prev_rows + (iq-1)*nE + find(mask(:,iq));
-        vars_mask_cens = vars_mask(find(freevars(:, 1, 1)), 1, 1)(:);
-        vars_mask_wids = vars_mask(find(freevars(:, 1, 2)), 1, 2)(:);
-        vars_mask_hts = vars_mask(find(freevars(:, 1+iq, 1)), 1+iq, 1)(:);
-        vars_mask_res = vars_mask(find(freevars(:, 1+iq, 2)), 1+iq, 2)(:);
+        vars_mask_cens = vars_mask(find(freevars(:, 1, 1)), 1, 1);
+        vars_mask_wids = vars_mask(find(freevars(:, 1, 2)), 1, 2);
+        vars_mask_hts = vars_mask(find(freevars(:, 1+iq, 1)), 1+iq, 1);
+        vars_mask_res = vars_mask(find(freevars(:, 1+iq, 2)), 1+iq, 2);
         cols_active = [vars_mask_cens; vars_mask_wids; vars_mask_hts; vars_mask_res];
         assert(length(rows_active) == length(aux_eng), "The number of non-zero energy points must be the same in AUX and VARS")
         assert(length(cols_active) == length(aux_var), "The number of parameters being fit must be the same in AUX and VARS")
@@ -69,7 +69,7 @@ for i_sym = 1:n_sym
 
         % permute so we have every row/col combination
         cols_full = repmat(cols_active(:)', length(rows_active), 1);
-        rows_full = repmat(rows_active(:), length(cols_active), 1)(:);
+        rows_full = repmat(rows_active(:), length(cols_active), 1); %rows_full = rows_full(:);
 
 
         % update index arrays
@@ -82,7 +82,7 @@ for i_sym = 1:n_sym
         jac_cols(ind_update) = cols_full;
         jac_vals(ind_update) = jaux_vals;
         jac_mask(ind_update) = 1;
-        prev_indices += n_added;
+        prev_indices = prev_indices + n_added;
 
         if debug
             if 0 %sum(jaux_vals == 0) > 0

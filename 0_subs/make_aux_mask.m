@@ -28,7 +28,7 @@ N_q=size(ydat,2);
 mask = edat>0;
 
 if 1
-	# TODO : this has 3 magic numbers.  Need to make sure they're turned into documented variables
+	% TODO : this has 3 magic numbers.  Need to make sure they're turned into documented variables
 	goodheight = startvars(:,3:end); 	% startvars is [cen(N_ph,1) wid(N_ph,1) heights(N_ph,N_q)]
 
 	eMin = 4;

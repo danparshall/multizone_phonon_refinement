@@ -6,7 +6,7 @@ function [modelout,jacout,varargout]=calc_singleQ(AUX,idx);
 
 if ~exist('idx'); idx=1; end
 
-eng = AUX.eng(AUX.mask(:,idx))(:)';     % row vector of just energies being fitted
+eng = AUX.eng(AUX.mask(:,idx))';     % row vector of just energies being fitted
 
 cen=AUX.auxvars(1:end-1, 1, 1);
 ht=AUX.auxvars(1:end-1, idx+1, 1);

@@ -69,7 +69,8 @@ rand('seed', 42);               % set random seed, for data reproducibility
 
 % use only up to max_Qs points
 if length(Q_mags) > max_Qs
-    rand_idx = randperm(length(Q_mags))(1:max_Qs);
+    rand_idx = randperm(length(Q_mags));
+    rand_idx = rand_idx(1:max_Qs);
     HKL_vals = HKL_vals(rand_idx, :);
     Q_mags = Q_mags(rand_idx);
     mask = mask(:, rand_idx);

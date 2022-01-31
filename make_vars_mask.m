@@ -33,7 +33,7 @@ for i_q = 1:nQ
     vars_mask(find(freevars(:, 1+i_q, 2)), 1+i_q, 2) = cols_res;
 
     num_added = length(find(mask(:,i_q))) * (length(cols_hts) + length(cols_res));
-    jac_nnz += num_added;
+    jac_nnz = jac_nnz + num_added;
 end  % end Q loop
 disp(["est. vars_nnz : ", num2str(jac_nnz)]);
 var_check = find(freevars) == find(vars_mask);
