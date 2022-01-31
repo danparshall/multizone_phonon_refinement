@@ -11,7 +11,7 @@ function [func_out, jac_out] = calc_full_model(SYMS,varsin,varargin)
 %	jacout is the various jacaux combined.  Ditto funcout.
 
 
-debug = 1;
+debug = 0;
 
 if nargin > 1
 	SYMS=update_AUX(SYMS,varsin);
@@ -63,25 +63,26 @@ for ind_sym=1:length(SYMS)
         i_wids = find(AUX.freevars(:, 1, 2)) + nr;
         i_hts = find(AUX.freevars(:, 1+iq, 1)) + 2*nr;
         i_res = find(AUX.freevars(:, 1+iq, 2)) + 3*nr;
-        jvals = [jacobian(:, i_cens)(:);        % centers
-                jacobian(:, i_hts)(:);          % heights + constant BG
-                jacobian(:, i_wids)(:);         % phonon widths
-                jacobian(:, i_res)(:);          % linear (and reswids, if anyone ever implements)
+        jvals = [reshape(jacobian(:, i_cens), [], 1);        % centers
+                reshape(jacobian(:, i_hts), [], 1);          % heights + constant BG
+                reshape(jacobian(:, i_wids), [], 1);         % phonon widths
+                reshape(jacobian(:, i_res), [], 1);          % linear (and reswids, if anyone ever implements)
              ];
 
         % indices of the rows/columns from this Q - note that these must correspond correctly to the values array, above
-        active_cols = [ inds_jac(:, 1, 1)(:);     % centers
-                        inds_jac(:, 1+iq, 1)(:);    % heights + const
-                        inds_jac(:, 1, 2)(:);       % widths
-        %            inds_jac(1:end-1, 1+iq, 2)(:);  % reswidths
-                        inds_jac(:, 1+iq, 2)(:);  % linear BG
+        active_cols = [ reshape(inds_jac(:, 1, 1), [], 1);     % centers
+                        reshape(inds_jac(:, 1+iq, 1), [], 1);    % heights + const
+                        reshape(inds_jac(:, 1, 2), [], 1);       % widths
+        %            reshape(inds_jac(1:end-1, 1+iq, 2), [], 1);  % reswidths
+                        reshape(inds_jac(:, 1+iq, 2), [], 1);  % linear BG
                         ];
-        active_cols = active_cols(find(active_cols))(:)';           % row vec containing indices of fitted columns
+        active_cols = active_cols(find(active_cols))';           % row vec containing indices of fitted columns
         active_rows = AUX.eng_inds(:, iq);
-        active_rows = active_rows(find(active_rows))(:);
+        active_rows = active_rows(find(active_rows));
         jrows = repmat(active_rows, length(active_cols), 1);     % column vector with [eng; eng; eng] (i.e, iterates over energies n_col times)
-        jcols = repmat(active_cols, length(active_rows), 1)(:);  % column vector with [c1; c1; c1; c2; c2; c2] (ie. has each column n_eng times)
-
+        jcols = repmat(active_cols, length(active_rows), 1);     % column vector with [c1; c1; c1; c2; c2; c2] (ie. has each column n_eng times)
+        jcols = jcols(:);
+        
         % update the larger array with results from this Q
 %        num_new_rows = length(valid_E) * length(active_cols);
         num_new_rows = length(jvals);
@@ -92,7 +93,7 @@ for ind_sym=1:length(SYMS)
         jac_vals(curr_sparserow + [1:num_new_rows]) = jvals;
 %        row_offset += Ne;
 %        col_offset += nr;
-        curr_sparserow += num_new_rows;
+        curr_sparserow = curr_sparserow + num_new_rows;
 
         if 0 % iq == 1
             [jrows jcols jvals]

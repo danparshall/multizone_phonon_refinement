@@ -35,11 +35,11 @@ poss_cen_fitting = zeros(n_cen, 1);
 for i_sym = 1:n_sym
     % In order to fit centers/widths, the peak has to be fittable SOMEWHERE
     this_poss = sum(SYMS{i_sym}.AUX.freevars(1:n_cen, 2:end, 1), 2) > 0;
-    poss_cen_fitting += this_poss;
+    poss_cen_fitting = poss_cen_fitting + this_poss;
 end  % end cen-fitting loop
 poss_cen_fitting = poss_cen_fitting > 0;
 
-if length(find(poss_cen_fitting)) != n_cen
+if length(find(poss_cen_fitting)) ~= n_cen
     disp("WARNING : some phonon peaks not fittable in any zone; these are being forced to non-free");
     for i_sym = 1:n_sym
         SYMS{i_sym}.AUX.freevars(1:n_cen, 1, 1) = poss_cen_fitting .* SYMS{i_sym}.AUX.freevars(1:n_cen, 1, 1);
@@ -86,10 +86,10 @@ for i_sym = 1:n_sym
     if i_sym == 1
 %        disp('initializing...')
         % the first 2*Nph elements of VARS are cens & wids
-        bounds_L = [AUX.bounds_L(1:end-1, 1, :)](:);
-        bounds_H = [AUX.bounds_H(1:end-1, 1, :)](:);
-        freevars = [AUX.freevars(1:end-1, 1, :)](:);
-        allvars = [AUX.auxvars(1:end-1, 1, :)](:);
+        bounds_L = [AUX.bounds_L(1:end-1, 1, :)]; bounds_L = bounds_L(:);
+        bounds_H = [AUX.bounds_H(1:end-1, 1, :)]; bounds_H = bounds_H(:);
+        freevars = [AUX.freevars(1:end-1, 1, :)]; freevars = freevars(:);
+        allvars = [AUX.auxvars(1:end-1, 1, :)];  allvars = allvars(:);
         prev_vars = length(freevars);
     end  % end if
 
@@ -103,10 +103,14 @@ for i_sym = 1:n_sym
 
 
     % each SYM appends Nq*(Nph+1) height+constant, and the same number of reswid+linear
-    bounds_L = [bounds_L; AUX.bounds_L(:, 2:end, :)(:)];
-    bounds_H = [bounds_H; AUX.bounds_H(:, 2:end, :)(:)];
-    freevars = [freevars; AUX.freevars(:, 2:end, :)(:)];
-    allvars = [allvars; AUX.auxvars(:, 2:end, :)(:)];
+    tmp = AUX.bounds_L(:, 2:end, :);
+    bounds_L = [bounds_L; tmp(:)];
+    tmp = AUX.bounds_H(:, 2:end, :);
+    bounds_H = [bounds_H; tmp(:)];
+    tmp= AUX.freevars(:, 2:end, :);
+    freevars = [freevars; tmp(:)];
+    tmp= AUX.auxvars(:, 2:end, :);
+    allvars = [allvars; tmp(:)];
     prev_vars = [prev_vars, length(freevars)];
     jac_nnz = [jac_nnz, SYMS{i_sym}.AUX.jac_nnz];
 
@@ -115,8 +119,8 @@ for i_sym = 1:n_sym
     alt = 0;
     for iq = 1:nQ
         free_eng = AUX.mask(:,iq);
-        free_vars = [AUX.freevars(:, 1, :)(:); AUX.freevars(:, 1+iq, :)(:)]';
-        alt += length(find(free_eng * free_vars));
+        free_vars = [reshape(AUX.freevars(:, 1, :), [], 1); reshape(AUX.freevars(:, 1+iq, :), [], 1)]';
+        alt = alt + length(find(free_eng * free_vars));
     end
     alt_nnz = [alt_nnz, alt];
 end  % end first SYM loop
