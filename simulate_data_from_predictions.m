@@ -2,13 +2,13 @@ function [SYM,startvars,true_y] = simulate_data_from_predictions(SYM, sim_vars, 
 
 
 
-function [modelout, jacout] = sim_escan(eng, cens, heights, w1, w2)
+function [modelout, jacout] = sim_escan(eng, cens, heights, wid_ph, wid_res, asymm)
     eng=eng(:)';
     modelout=zeros(size(eng));
 
     for ind=1:N_ph;
-        [splitgauss,splitjac]=calc_splitgauss_JAC_fast(eng, cens(ind), heights(ind), w1(ind), w2(ind));
-        modelout = modelout+splitgauss';
+        [splitgauss,splitjac] = calc_splitgauss_full(eng, cens(ind), heights(ind), wid_ph(ind), wid_res(ind), asymm);
+        modelout = modelout + splitgauss';
     end
 end
 
@@ -21,10 +21,8 @@ cens = sim_vars(:,1);
 
 %% resolution-adjusted widths
 reswids=merchop(SYM.Ei, SYM.chopfreq, cens);
-FWHM = sim_vars(:,2) + reswids;
+wids_ph = sim_vars(:,2);
 asymm = 1.7;
-w1 = FWHM * asymm/(asymm+1);
-w2 = FWHM * 1/(asymm+1);
 
 
 heights = sim_vars(:, 3:end);
@@ -41,7 +39,7 @@ for inq=1:N_q
 
 	% model of ideal data
     hts = heights(:, inq);   % heights at just this Q
-	[model] = sim_escan(eng, cens, hts, w1, w2);
+	[model] = sim_escan(eng, cens, hts, wids_ph, reswids, asymm);
     true_y(:,inq) = model;
 
 	% generate noise
@@ -71,11 +69,11 @@ SYM.DAT.xdat = sim_x;
 SYM.DAT.eng = eng;
 
 
-if 0
+if 1
 	% make starting variables by adding noise to true variables (since our DFT prediction is never perfect)
-	cen_noise = cens .* randn(N_ph, 1) * 0.05;    % 95% of the time, start within 5% of prediction
+	cen_noise = cens .* randn(N_ph, 1) * 0.1;    % 95% of the time, start within 5% of prediction
 	wid_noise = sim_vars(:,2) .* (1 + randn(N_ph, 1)*0.1);
-	hts_noise = heights .* (1 + randn(N_ph, N_q)*0.2);
+	hts_noise = heights .* (1 + randn(N_ph, N_q)*0.4);
 
 else
 	cen_noise = zeros(N_ph, 1);

@@ -10,6 +10,8 @@ eng = AUX.eng(AUX.mask(:,idx))';     % row vector of just energies being fitted
 
 cen=AUX.auxvars(1:end-1, 1, 1);
 ht=AUX.auxvars(1:end-1, idx+1, 1);
+wid = AUX.auxvars(1:end-1, 1, 2);
+res = AUX.auxvars(1:end-1, 1+idx, 2);
 
 
 %%%% WIDTHS
@@ -17,6 +19,8 @@ FWHM = AUX.auxvars(1:end-1, 1, 2) + AUX.auxvars(1:end-1, idx+1, 2); % add phonon
 asymm = AUX.peak_asymmetry;
 w1 = FWHM * asymm/(asymm+1);
 w2 = FWHM * 1/(asymm+1);
+
+
 
 % Background
 constant = AUX.auxvars(end,idx+1,1);
@@ -43,7 +47,8 @@ end
 
 for ind=1:AUX.Nph
 	if nargout==2	% when asked for jacobian
-		[splitgauss,splitjac] = calc_splitgauss_JAC_fast(eng,cen(ind),ht(ind),w1(ind),w2(ind));
+%		[splitgauss,splitjac] = calc_splitgauss_JAC_fast(eng,cen(ind),ht(ind),w1(ind),w2(ind));
+		[splitgauss, splitjac] = calc_splitgauss_full(eng, cen(ind), ht(ind), wid(ind), res(ind), asymm );
 		modelout = modelout + splitgauss';
         
 %		ind_j = (3*ind)-2;
@@ -52,7 +57,8 @@ for ind=1:AUX.Nph
 		jacout(:, ind_cwh) = splitjac;
 
 	else			% no jacobian
-		splitgauss = calc_splitgauss_JAC_fast(eng,cen(ind),ht(ind),w1(ind),w2(ind));
+%		splitgauss = calc_splitgauss_JAC_fast(eng,cen(ind),ht(ind),w1(ind),w2(ind));
+		splitgauss = calc_splitgauss_full(eng, cen(ind), ht(ind), wid(ind), res(ind), asymm );
 		modelout = modelout + splitgauss';
 	end
 end

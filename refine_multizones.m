@@ -1,5 +1,14 @@
 function SYMS = refine_multizones(SYMS);
 
+%% had to change to MATLAB syntax in these files:
+#	modified:   0_subs/calc_full_model.m
+#	modified:   0_subs/calc_singleQ.m
+#	modified:   0_subs/make_aux_mask.m
+#	modified:   assemble_VARS.m
+#	modified:   make_full_jacobian.m
+#	modified:   make_vars_mask.m
+#	modified:   simulate_phonon_predictions.m
+
 
 debug = 1;
 
@@ -24,9 +33,10 @@ disp(['  Refining with ' num2str(nZones) ' seperate Q-points']);
 
   opts = optimset ( ...
 		'Jacobian',			'on', ...
-		'DerivativeCheck',	'off',...
+%		'DerivativeCheck',	'off',...
 		'MaxIter',			400,...
-		'Display', 			'iter');
+		'Display', 			'iter', ...
+		'TolFun',			1e-10 );
 
 	
 	%% Check that array sizes 
@@ -88,57 +98,25 @@ end
 
 % === plotting ===
 if 1
-	funcout = calc_model_multiQ(SYMS,varsout);
+	funcout = calc_full_model(SYMS,varsout);
 	disp('Plotting...')
 	for ind_sym = 1:length(SYMS)
 		SYM = SYMS{ind_sym};
 
 		disp(['  ind_sym : ' num2str(ind_sym)])
+		disp(['Allvars size : ' num2str(size(SYMS{1}.VARS.allvars))]);
 		disp('startvars :')
 		SYM.startvars
 		disp('Cens :')
-		cen = SYMS{1}.VARS.allvars(1:end-1, 1, 1)
-		funcindex = cumsum(sum(SYM.AUX.mask));
-		mask = SYM.AUX.mask;
-		DAT = SYM.DAT;
-		Nq = SYM.AUX.Nq
-		
-		for ind = 1:Nq
-			if sum(mask(:,ind))>0
-				qpoint = DAT.HKL_vals(ind,:);
-				xdata = DAT.xdat(mask(:,ind),ind);
-				ydata = DAT.ydat(mask(:,ind),ind);
-				edata = DAT.edat(mask(:,ind),ind);
-%save_data(xdata',ydata',edata',qpoint);
-%SYMS{1}.VARS.allvars(:,ind+1,:)
-%SYMS{1}.AUX.freevars(:,ind+1,:)
-				xfit = DAT.xdat(mask(:,ind),ind);
-				if ind ~= 1
-%					yfit = funcout(funcindex(ind-1)+1:funcindex(ind));
-					yfit = funcout(funcindex(ind-1)+1:funcindex(ind));
-				else
-%					yfit = funcout(1:funcindex(ind));
-					yfit = funcout(1:funcindex(ind));
-				end
-	
-				hold off; errorbar(xdata,ydata,edata,'b--');
-				hold on; plot(xfit,yfit,'r-','linewidth',1,[0 80],[0 0],'k--');
-%				axis([DAT.xdat(1,ind) DAT.xdat(end,ind)]);
-				axis([DAT.eng(1) DAT.eng(end)]);
-				title(['column: ',num2str(ind),', q point: ',num2str(qpoint)]);
-				xlabel('Energy (meV)');
-				ylabel('Intensity (arb. units)');
-				legend('Actual Data', 'Fit Data')
-				pause
-			end
-		end
+		cen = SYMS{1}.VARS.allvars(1:SYMS{1}.VARS.Nph)
+		plot_SYM(SYM);
 	end
 end
 hold off
 
 function [F,J,varargout] = objective(SYMS,vars,y_obs);
-	disp('Calling objective...')
-	weights = 1;		% DerivativeCheck passed when using weights
+%	disp('Calling objective...')
+	weights = 0;		% DerivativeCheck passed when using weights
 
 	if nargout > 1
 		[funcout,J]=calc_full_model(SYMS,vars);

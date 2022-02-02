@@ -1,16 +1,21 @@
 function plot_SYM(SYM);
 
 
+debug = 0;
 
-disp('startvars :')
-SYM.startvars
-SYM.sim_vars
+if debug
+    disp('startvars :')
+    SYM.startvars
+    SYM.sim_vars
+end
 
-mask = SYM.AUX.mask;
+AUX = SYM.AUX;
+mask = AUX.mask;
 DAT = SYM.DAT;
 Nq = SYM.AUX.Nq
 
 for ind = 1:Nq
+    if debug; disp(['Q-ind : ', num2str(ind)]); end;
     if sum(mask(:,ind))>0
         qpoint = DAT.HKL_vals(ind,:);
         xdata = DAT.xdat(mask(:,ind),ind);
@@ -19,13 +24,19 @@ for ind = 1:Nq
 
 
         xfit = DAT.xdat(mask(:,ind),ind);
-        yfit = calc_JAC_singleQ(SYM.AUX, DAT, ind);
+        yfit = calc_singleQ(AUX, ind);
         yfit = yfit(mask(:,ind))';
-        [ydata, yfit]
+        if debug; [ydata, yfit]; end;
 
+        cens = AUX.auxvars(1:end-1, 1, 1);
+        hts = AUX.auxvars(1:end-1, 1+ind, 1);   % heights
 
-        hold off; errorbar(xdata,ydata,edata,'b--');
-        hold on; plot(xfit,yfit,'r-','linewidth',1,[0 80],[0 0],'k--');
+        hold off;
+        errorbar(xdata,ydata,edata,'b--');
+        hold on; 
+        plot(xfit,yfit,'r-','linewidth',1);     % best-fit line
+        plot(cens, hts, 'g*','linewidth',1);    % fitted centers
+        plot([0 80],[0 0],'k--');               % x-axis
         
         axis([DAT.eng(1) DAT.eng(end)]);
         title(['column: ',num2str(ind),', q point: ',num2str(qpoint)]);
