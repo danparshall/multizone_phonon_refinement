@@ -44,12 +44,6 @@ if length(find(poss_cen_fitting)) ~= n_cen
     for i_sym = 1:n_sym
         SYMS{i_sym}.AUX.freevars(1:n_cen, 1, 1) = poss_cen_fitting .* SYMS{i_sym}.AUX.freevars(1:n_cen, 1, 1);
         SYMS{i_sym}.AUX.freevars(1:n_cen, 1, 2) = poss_cen_fitting .* SYMS{i_sym}.AUX.freevars(1:n_cen, 1, 2);
-
-        shape_fvars = size(SYMS{i_sym}.AUX.freevars);
-        SYMS{i_sym}.AUX.jac_inds = reshape([1:prod(shape_fvars)], shape_fvars) .* SYMS{i_sym}.AUX.freevars;
-
-        shape_eng = size(SYMS{i_sym}.AUX.mask);
-        SYMS{i_sym}.AUX.eng_inds = reshape([1:prod(shape_eng)], shape_eng) .* SYMS{i_sym}.AUX.mask;
     end 
 end
 
@@ -114,6 +108,14 @@ for i_sym = 1:n_sym
     prev_vars = [prev_vars, length(freevars)];
     jac_nnz = [jac_nnz, SYMS{i_sym}.AUX.jac_nnz];
 
+
+
+    shape_fvars = size(SYMS{i_sym}.AUX.freevars);
+    SYMS{i_sym}.AUX.jac_inds = reshape([1:prod(shape_fvars)], shape_fvars) .* SYMS{i_sym}.AUX.freevars;
+
+    shape_eng = size(SYMS{i_sym}.AUX.mask);
+    SYMS{i_sym}.AUX.eng_inds = reshape([1:prod(shape_eng)], shape_eng) .* SYMS{i_sym}.AUX.mask;
+    
 
     % alternate method to determine NNZ per SYM
     alt = 0;
