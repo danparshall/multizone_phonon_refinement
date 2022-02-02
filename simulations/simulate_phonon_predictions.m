@@ -1,35 +1,43 @@
-function [SYM, sim_vars] = simulate_phonon_predictions(SYM, max_Qs)
+function [SYM, sim_vars] = simulate_phonon_predictions(SYM, XTAL, max_Qs, seed)
 
 
-    function eng=calc_mom_to_eng(mom);
-        % calculates neutron energy (meV) from momentum (inv Angstroms)
-        eng = 81.82*(mom./(2*pi)).^2;
+% set random seed, for data reproducibility
+if ~exist('seed'); seed=42; end
+rand('seed', seed);
+
+
+%% helper functions
+function eng=calc_mom_to_eng(mom);
+    % calculates neutron energy (meV) from momentum (inv Angstroms)
+    eng = 81.82*(mom./(2*pi)).^2;
+end
+
+
+function mom=calc_eng_to_mom(eng);
+    % Calculates neutron momentum (inv Angstroms) from energy (meV)
+    mom = 2*pi*sqrt(eng/81.82);
+end
+
+
+function k_f_max = calc_kfmax(Q_mag, k_i)
+    if Q_mag < k_i;
+        k_f_max = k_i - Q_mag;
+    else
+        k_f_max = Q_mag - k_i;
     end
+end
 
 
-    function mom=calc_eng_to_mom(eng);
-        % Calculates neutron momentum (inv Angstroms) from energy (meV)
-        mom = 2*pi*sqrt(eng/81.82);
-    end
 
+%% only designed for cubic crystal
+latt = XTAL.latt;
+cens = XTAL.cens(:);
+cens = cens + 0.00005;      % tiny offset, reduces pathological cases of vanishing derivatives when a center is exactly equal to an energy point
+wids = XTAL.wids(:);
 
-    function k_f_max = calc_kfmax(Q_mag, k_i)
-        if Q_mag < k_i;
-            k_f_max = k_i - Q_mag;
-        else
-            k_f_max = Q_mag - k_i;
-        end
-    end
-
-%% manual, for hypothetical cubic crystal
-latt = 4.287;
-cens = [5, 7, 10, 15, 30, 31];
-cens = cens(:);
-cens = cens + 0.00005;
 
 E_i = SYM.Ei;
 N_ph = length(cens);
-wids = 0.04 * ones(N_ph, 1);
 
 
 k_i = calc_eng_to_mom(E_i);
@@ -64,8 +72,6 @@ for H = 0:max_bzone
     end
 end
 
-
-rand('seed', 42);               % set random seed, for data reproducibility
 
 % use only up to max_Qs points
 if length(Q_mags) > max_Qs
