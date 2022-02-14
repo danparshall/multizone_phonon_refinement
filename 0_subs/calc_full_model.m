@@ -36,7 +36,7 @@ for ind_sym=1:length(SYMS)
     Nq = AUX.Nq;
     Ne = length(AUX.eng);
 
-    y_calc = zeros(size(DAT.ydat));
+    y_calc = zeros(size(DAT.y_dat));
 
 
     aux_nnz = AUX.aux_nnz;              % calculated in make_vars_mask

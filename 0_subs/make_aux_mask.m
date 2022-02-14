@@ -13,11 +13,11 @@ centers = startvars(:,1);
 if isfield(DAT,'eng')
 	eng = DAT.eng;
 else
-	eng = DAT.xdat(:,1);
+	eng = DAT.x_dat(:,1);
 end
 xstep = eng(2)-eng(1);
-ydat = DAT.ydat;
-edat = DAT.edat;
+ydat = DAT.y_dat;
+edat = DAT.e_dat;
 
 N_ph=length(centers);
 N_q=size(ydat,2);

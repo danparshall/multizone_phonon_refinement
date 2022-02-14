@@ -80,7 +80,7 @@ for i_sym = 1:n_sym;
     nQ = AUX.Nq;
     nE = length(AUX.eng);
 
-    y_masked = DAT.ydat .* AUX.mask;
+    y_masked = DAT.y_dat .* AUX.mask;
     y_obs = [y_obs; y_masked(:)];
 
     w_masked = (1./DAT.edat).^2 .* AUX.mask;

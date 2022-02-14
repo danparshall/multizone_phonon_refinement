@@ -44,14 +44,14 @@ for i_sym = 1:length(SYMS)
 	DAT = SYMS{i_sym}.DAT;
 	startvars = SYMS{i_sym}.startvars;
 
-	AUX.Nq = size(DAT.ydat,2);
+	AUX.Nq = size(DAT.y_dat,2);
 	AUX.Nph = size(startvars,1);
-	AUX.wdat = 1./DAT.edat.^2;
+	AUX.wdat = 1./DAT.e_dat.^2;
 
 	if isfield(DAT,'eng');
 		AUX.eng = DAT.eng;
 	else;
-		AUX.eng = DAT.xdat(:,1);
+		AUX.eng = DAT.x_dat(:,1);
 	end
 
 	% makes mask and starting values for height fitting, and decides whether to fit a height
@@ -83,7 +83,7 @@ for i_sym = 1:length(SYMS)
 			    			0 		linear_BG];
 
 	% set BOUNDS (have the same structure as auxvars)
-	delta_counts = max(max(DAT.ydat)) - min(min(DAT.ydat))
+	delta_counts = max(max(DAT.y_dat)) - min(min(DAT.y_dat))
 	delta_energy = max(AUX.eng) - min(AUX.eng);
 
 	AUX.bounds_L = 0.001 * ones(size(AUX.auxvars));
@@ -94,9 +94,9 @@ for i_sym = 1:length(SYMS)
 
 	AUX.bounds_H = ones(size(AUX.auxvars));
 	AUX.bounds_H([1:end-1],1,1) = 10*goodcen;					% max cen is 10x the DFT prediction
-	AUX.bounds_H(:,[2:end],1) = 1.5*max(max(DAT.ydat));			% maxheight is 1.5x maxdata
+	AUX.bounds_H(:,[2:end],1) = 1.5*max(max(DAT.y_dat));			% maxheight is 1.5x maxdata
 	AUX.bounds_H(1:end-1,1,2) = 10*max(goodwid);				% max width is 10x the max DFT prediction
-	AUX.bounds_H(end,[2:end],1) = 0.5*max(max(DAT.ydat));		% constant BG max set to (max of observed counts)/2
+	AUX.bounds_H(end,[2:end],1) = 0.5*max(max(DAT.y_dat));		% constant BG max set to (max of observed counts)/2
 	AUX.bounds_H(end,[2:end],2) = delta_counts/delta_energy;	% linear BG max
 	AUX.bounds_H([1:end-1],[2:end],2) = repmat(10*abs(reswids(:,1)), 1, AUX.Nq);	% set to 10x the resolution (abs bc non-kinematic become negative)
 
