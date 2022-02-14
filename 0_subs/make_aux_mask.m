@@ -1,5 +1,5 @@
-function [mask, goodheight, free_cenht] = make_aux_mask(SYM,startvars,sqwind)
-% [mask, goodheight, free_cenht] = make_aux_mask(SYM,startvars,sqwind)
+function [mask, goodheight, free_cenht] = make_aux_mask(SYM,startvars,i_sym)
+% [mask, goodheight, free_cenht] = make_aux_mask(SYM,startvars,i_sym)
 %	looks through data, excludes datasets that don't have a good peak
 %	mask is a boolean, size(ydat). 1 for valid data.
 %	goodheight is finite for good peaks, 0 otherwise
@@ -7,7 +7,7 @@ function [mask, goodheight, free_cenht] = make_aux_mask(SYM,startvars,sqwind)
 
 
 %starting variables
-DAT = SYM{sqwind}.DAT;
+DAT = SYM{i_sym}.DAT;
 centers = startvars(:,1);
 
 if isfield(DAT,'eng')
@@ -15,7 +15,6 @@ if isfield(DAT,'eng')
 else
 	eng = DAT.xdat(:,1);
 end
-
 xstep = eng(2)-eng(1);
 ydat = DAT.ydat;
 edat = DAT.edat;
@@ -31,7 +30,7 @@ if 1
 	% TODO : this has 3 magic numbers.  Need to make sure they're turned into documented variables
 	goodheight = startvars(:,3:end); 	% startvars is [cen(N_ph,1) wid(N_ph,1) heights(N_ph,N_q)]
 
-	eMin = 4;
+	eMin = 3;
 	eMax = 75;
 	centers_free = (centers > eMin) & (centers < eMax);
 
@@ -39,7 +38,11 @@ if 1
 	heights_free = repmat(centers_free,1,N_q);
 	for ind = 1:N_q
 		good_eng = eng(mask(:,ind));
-		heights_free(:,ind) = (centers > good_eng(1)-margin) & (centers < good_eng(end)+margin);
+		if length(good_eng) > 1
+			heights_free(:,ind) = (centers > good_eng(1)-margin) & (centers < good_eng(end)+margin);
+		else
+			heights_free(:, ind) = 0;
+		end
 	end
 else
 
@@ -82,7 +85,7 @@ else
 	eBins = round(eBins);
 	peaksize = [];%peakSize is the distance (in meV) from a peak that the mask looks (should be within a magnitude of resolution width probably)
 	for ind = 1:N_ph
-		peaksize = [peaksize peak_expansion*merchop(SYM{sqwind}.Ei,SYM{sqwind}.chopfreq,centers(ind))];
+		peaksize = [peaksize peak_expansion*merchop(SYM{i_sym}.Ei,SYM{i_sym}.chopfreq,centers(ind))];
 	end
 
 
