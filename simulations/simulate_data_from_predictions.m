@@ -1,17 +1,14 @@
-function [SYM,startvars,true_y] = simulate_data_from_predictions(SYM, sim_vars, junk_scale)
+function [SYM,startvars,true_y] = simulate_data_from_predictions(SYM, sim_vars, junk_scale, pred_error)
 
 
-wid_ratio = 0.33;
-function [modelout, jacout] = sim_escan(eng, cens, wids, heights, wid_ratio)
+
+function [modelout, jacout] = sim_escan(eng, cens, heights, wid_ph, wid_res, asymm)
     eng=eng(:)';
     modelout=zeros(size(eng));
 
-    hwhm_1 = wids*wid_ratio;
-    hwhm_2 = wids*(1-wid_ratio);
-
     for ind=1:N_ph;
-        [splitgauss,splitjac]=calc_splitgauss_JAC_fast(eng, cens(ind), heights(ind), hwhm_1(ind), hwhm_2(ind));
-        modelout = modelout+splitgauss';
+        [splitgauss,splitjac] = calc_splitgauss_full(eng, cens(ind), heights(ind), wid_ph(ind), wid_res(ind), asymm);
+        modelout = modelout + splitgauss';
     end
 end
 
@@ -24,7 +21,9 @@ cens = sim_vars(:,1);
 
 %% resolution-adjusted widths
 reswids=merchop(SYM.Ei, SYM.chopfreq, cens);
-wids = sqrt(sim_vars(:,2).^2 + reswids.^2);
+wids_ph = sim_vars(:,2);
+asymm = 1.7;
+
 
 heights = sim_vars(:, 3:end);
 
@@ -40,7 +39,7 @@ for inq=1:N_q
 
 	% model of ideal data
     hts = heights(:, inq);   % heights at just this Q
-	[model] = sim_escan(eng, cens, wids, hts, wid_ratio);
+	[model] = sim_escan(eng, cens, hts, wids_ph, reswids, asymm);
     true_y(:,inq) = model;
 
 	% generate noise
@@ -70,13 +69,27 @@ SYM.DAT.xdat = sim_x;
 SYM.DAT.eng = eng;
 
 
-% make starting variables by adding noise to true variables (since our DFT prediction is never perfect)
-cen_noise = cens .* randn(N_ph, 1) * 0.05;    % 95% of the time, start within 5% of prediction
-wid_noise = sim_vars(:,2) .* (1 + randn(N_ph, 1)*0.1);
-hts_noise = heights .* (1 + randn(N_ph, N_q)*0.2);
+if 1
+	% make starting variables by adding noise to true variables (since our DFT prediction is never perfect)
+	if ~exist('pred_error')
+		disp('No pred_error specified; using junk_scale')
+		pred_error = junk_scale/4;
+	end
+
+	% 95% of the time, prediction starts within $PRED_ERROR percent of true value
+	cen_noise = cens .*  (pred_error*randn(N_ph, 1));
+	wid_noise = sim_vars(:,2) .* (pred_error*randn(N_ph, 1));
+	hts_noise = heights .* (pred_error*randn(N_ph, N_q));
+
+else
+	% don't add noise; simulated DFT predictions correspond exactly to the true underlying values
+	cen_noise = zeros(N_ph, 1);
+	wid_noise = zeros(N_ph, 1);
+	hts_noise = zeros(N_ph, N_q);
+end  % end noise addition
+
 start_cens = sim_vars(:,1) + cen_noise;
 start_wids = sim_vars(:,2) + wid_noise;
 start_hts = heights + hts_noise;
 startvars = [start_cens, start_wids, start_hts ];
-
 end
