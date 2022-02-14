@@ -76,6 +76,8 @@ for i_sym = 1:n_sym
         jaux_vals =  full(SYM.AUX.auxjac(aux_inds));
         assert(length(jaux_vals) == length(rows_full))
 
+%        [rows_full(:), cols_full(:), jaux_vals(:)]
+
         n_added = length(jaux_vals);
         ind_update = prev_indices + [1:n_added];
         jac_rows(ind_update) = rows_full;
@@ -118,7 +120,7 @@ n_jcols = 2*n_cen +2*sum((n_cen + 1)*nQs);
 jacobian = sparse(jac_rows, jac_cols, jac_vals, n_jrows, n_jcols);
 
 if debug; 
-    disp(["... Jacobian is " num2str(n_jrows) "x" num2str(n_jcols) ", with " num2str(nnz(jacobian)) " non-zero."]);
+    disp(["... Jacobian is " num2str(n_jrows) "x" num2str(n_jcols) " variables, with " num2str(nnz(jacobian)) " non-zero."]);
 
     fit_cols = sum(jacobian, 1);
     disp(["# of fittable variables in Jacobian : ", num2str(length(find(fit_cols)))]);

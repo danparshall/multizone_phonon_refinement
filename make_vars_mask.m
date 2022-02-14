@@ -1,5 +1,5 @@
 function [vars_mask, jac_nnz] = make_vars_mask(AUX, cols_prev);
-% For every variable located within auxvars, determines the column number it will be assigned in the full jacobian.
+% For every variable located within auxvars, this function determines the column number it will be assigned in the full jacobian.
 % the vars_mask has the same shape as auxvars/freevars, but the nonzero elements are occupied by the column of the full jacobian.
 %
 % So, something like full_jac(FULL_ROWS, vars_mask(find(freevars))) = aux_jac(AUX_ROWS, find(freevars)) will populate the full jacobian (for this SYM)
@@ -27,7 +27,7 @@ jac_nnz = length(find(mask)) * (length(i_cens) + length(i_wids)) ;
 
 for i_q = 1:nQ
     cols_hts = cols_prev + (i_q - 1)*(n_cen + 1) + find(freevars(:, 1+i_q, 1));                     % heights and constant BG
-    cols_res = cols_prev + (i_q - 1)*(n_cen + 1) + nQ*(n_cen + 1) + find(freevars(:, 1+i_q, 2));    % linear BG (and res widths, if free)
+    cols_res = cols_prev + (i_q - 1)*(n_cen + 1) + nQ*(n_cen + 1) + find(freevars(:, 1+i_q, 2));    % linear BG (and res widths)
 
     vars_mask(find(freevars(:, 1+i_q, 1)), 1+i_q, 1) = cols_hts;
     vars_mask(find(freevars(:, 1+i_q, 2)), 1+i_q, 2) = cols_res;
