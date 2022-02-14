@@ -10,13 +10,13 @@ show_plots = 1;
 
 %% manual, for hypothetical cubic crystal (simulation only handles cubic)
 XTAL.latt = 4.287;
-%XTAL.cens = [4, 7, 10, 15, 25, 30];
-XTAL.cens = [4, 4.5, 5, 5.5, 6, 7];
+XTAL.cens = [4, 7, 10, 15, 25, 30];
+%XTAL.cens = [4, 4.5, 5, 5.5, 6, 7];
 %XTAL.cens = [15, 25, 40, 4, 4.5, 5];
 XTAL.wids = 0.04 * ones(size(XTAL.cens));
 
-junk_scale = 0.05
-pred_error = 0.1;   % How close the starting values of the parameters are to the true values; lower values simulate a more accurate DFT prediction 
+junk_scale = 0.005
+pred_error = 0.001;   % How close the starting values of the parameters are to the true values; lower values simulate a more accurate DFT prediction 
 
 
 SYMS = {};
@@ -74,11 +74,15 @@ end
 SYMS = generate_AUX(SYMS);
 SYMS = assemble_VARS(SYMS);
 
+VARS = SYMS{1}.VARS;
+disp([' length(y_obs) : ', num2str(length(VARS.y_obs)) ';  sum(isnan(y_obs)) : ', num2str(sum(isnan(VARS.y_obs)))]);
+disp([' length(w_obs) : ', num2str(length(VARS.w_obs)) ';  sum(isnan(w_obs)) : ', num2str(sum(isnan(VARS.w_obs)))]);
+
+
 
 % fit data
 if run_fit
     SYMS = refine_multizones(SYMS);
-
 
     % === plotting ===
     if show_plots
@@ -96,6 +100,11 @@ if run_fit
 %                cen = SYMS{1}.VARS.allvars(1:SYMS{1}.VARS.Nph)
                 disp('auxvars (page1) :')
                 disp(AUX.auxvars(:,:,1))
+                disp('---------------')
+                disp('')
+
+                disp('uncertainty (page1) :')
+                disp(AUX.uncertainty(:,:,1))
                 disp('---------------')
                 disp('')
             end

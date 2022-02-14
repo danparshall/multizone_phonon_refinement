@@ -93,8 +93,9 @@ SYMS=assemble_VARS(SYMS);
 %nansum_multizone = sum(isnan(SYMS{1}.AUX.auxvars(:,1,1)))
 
 
-if 0
-	unc = calc_unc(SYMS);
+if 1
+	disp('Calculating parameter uncertainty...')
+	SYMS = calc_unc(SYMS);
 end
 
 
@@ -103,10 +104,11 @@ end
 function [F,J,varargout] = objective(SYMS, vars, y_obs);
 %	disp('Calling objective...')
 	weights = 0;		% DerivativeCheck passed when using weights
+	func_mask = SYMS{1}.VARS.func_mask;
 
 	if nargout > 1
 		[func_out,jac_out] = calc_full_model(SYMS, vars);
-		J = jac_out(:, SYMS{1}.VARS.indfree);
+		J = jac_out(func_mask, SYMS{1}.VARS.indfree);
 	else
 		func_out = calc_full_model(SYMS, vars);
 	end
@@ -116,5 +118,6 @@ function [F,J,varargout] = objective(SYMS, vars, y_obs);
 	else
 		F = func_out - y_obs;
 	end
+	F = F(func_mask);
 end
 end

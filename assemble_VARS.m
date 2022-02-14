@@ -66,9 +66,11 @@ nQs = [];   % number of Q-points for which each SYM has data
 nEs = [];   % length of energy array for each SYM
 y_obs = [];
 w_obs = [];
+func_mask = [];
 jac_nnz = [];
 alt_nnz = [];
 
+obs_prev = 0;
 cols_prev = 2*n_cen;			% the first 2*n_cen cols of the full jacobian are reserved for cens & wids
 for i_sym = 1:n_sym;
     if debug; disp(''); disp(["Assembling VARS using data from SYM : " num2str(i_sym)]); end;
@@ -83,6 +85,10 @@ for i_sym = 1:n_sym;
 
     w_masked = (1./DAT.edat).^2 .* AUX.mask;
     w_obs = [w_obs; w_masked(:)];
+
+    this_mask = find(AUX.mask);
+    func_mask = [func_mask; obs_prev + this_mask(:)];
+    obs_prev = obs_prev + numel(AUX.mask);
 
     % append number of energy/Q points to our running total
     % nQ x nE is the nominal number of rows from this SYM (i.e. nominal number of rows in the Jacobian)
@@ -151,6 +157,7 @@ SYMS{1}.VARS.nQs = nQs;
 SYMS{1}.VARS.nEs = nEs;
 SYMS{1}.VARS.y_obs = y_obs;
 SYMS{1}.VARS.w_obs = w_obs;
+SYMS{1}.VARS.func_mask = func_mask;
 SYMS{1}.VARS.prev_vars = prev_vars;
 SYMS{1}.VARS.jac_nnz = jac_nnz;
 if debug; SYMS{1}.VARS.alt_nnz = alt_nnz; end;

@@ -131,9 +131,5 @@ for ind_sym=1:length(SYMS)
     func_out = [func_out; y_calc(:)];   % append the calculated function as a column vector; only have to do this once per SYM, so not too much overhead
 end   % end SYMS loop
 
-
-%full_jacobian = make_full_jacobian(SYMS);
-%jac_out = full_jacobian(:, SYMS{1}.VARS.indfree);
 jac_out = make_full_jacobian(SYMS);
-
 end     % end function
