@@ -10,19 +10,21 @@ show_plots = 1;
 
 %% manual, for hypothetical cubic crystal (simulation only handles cubic)
 XTAL.latt = 4.287;
-XTAL.cens = [5, 6, 7, 15, 25, 30];
+%XTAL.cens = [4, 7, 10, 15, 25, 30];
+XTAL.cens = [4, 4.5, 5, 5.5, 6, 7];
+%XTAL.cens = [15, 25, 40, 4, 4.5, 5];
 XTAL.wids = 0.04 * ones(size(XTAL.cens));
 
 junk_scale = 0.05
-pred_error = 0.07;   % How close the starting values of the parameters are to the true values; lower values simulate a more accurate DFT prediction 
+pred_error = 0.1;   % How close the starting values of the parameters are to the true values; lower values simulate a more accurate DFT prediction 
 
 
 SYMS = {};
 if 1
     %% user-defined params
-    SYM.Ei=60; 
-    SYM.chopfreq=300;
-    SYM.eng=[2 : 0.5 : SYM.Ei]';
+    SYM.Ei=30;
+    SYM.chopfreq=600;
+    SYM.eng=[3 : 0.1 : SYM.Ei]';
     max_Qs = 30;
 
     % simulated data (don't edit)
@@ -40,10 +42,10 @@ end
 
 if 1
     %% user-defined params
-    SYM.Ei=40;
+    SYM.Ei=50;
     SYM.chopfreq=600;
     SYM.eng=[2: 0.25 :SYM.Ei]';
-    max_Qs = 30
+    max_Qs = 50
 
     % simulated data (don't edit)
     [SYM, sim_vars] = simulate_phonon_predictions(SYM, XTAL, max_Qs);
@@ -72,10 +74,10 @@ end
 SYMS = generate_AUX(SYMS);
 SYMS = assemble_VARS(SYMS);
 
+
 % fit data
 if run_fit
     SYMS = refine_multizones(SYMS);
-%    fitcens=SYMS{1}.VARS.allvars(:,1);
 
 
     % === plotting ===
@@ -92,9 +94,10 @@ if run_fit
                 SYM.startvars
 %                disp('Cens :')
 %                cen = SYMS{1}.VARS.allvars(1:SYMS{1}.VARS.Nph)
-                disp('auxvars :')
-                disp(AUX.auxvars)
-                disp('-------------\n')
+                disp('auxvars (page1) :')
+                disp(AUX.auxvars(:,:,1))
+                disp('---------------')
+                disp('')
             end
 
             % plot data, fit, and possibly true underlying function
@@ -110,6 +113,13 @@ if run_fit
 end  % end fit
 
 
-
+if show_plots
+    disp('Plotting jacobian structure');
+    [func_out, jac_full, SYMS] = calc_full_model(SYMS);
+    clf(gcf);
+    spy(jac_full);
+    fflush(stdout);
+    pause();
+end
 
 end % endfunction
