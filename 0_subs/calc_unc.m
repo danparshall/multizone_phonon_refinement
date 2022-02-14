@@ -29,7 +29,8 @@ end
 [func, jac] = calc_full_model(SYMS, VARS.varsin);
 
 residuals = func(func_mask) - y_obs;
-resnorm = residuals.^2 .* w_obs;
+%resnorm = residuals.^2 .* w_obs;
+resnorm = residuals.^2;
 
 jac = jac(func_mask, VARS.indfree);
 [N_pts,N_vars] = size(jac);
