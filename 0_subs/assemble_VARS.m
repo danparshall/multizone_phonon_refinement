@@ -1,5 +1,5 @@
 function SYMS=assemble_VARS(SYMS);
-% SYMS=make_VARS(SYMS);
+% SYMS = assemble_VARS(SYMS);
 % Assembles individual AUX.auxvars into VARS.allvars
 %
 % auxvars are :
@@ -161,4 +161,3 @@ SYMS{1}.VARS.func_mask = func_mask;
 SYMS{1}.VARS.prev_vars = prev_vars;
 SYMS{1}.VARS.jac_nnz = jac_nnz;
 if debug; SYMS{1}.VARS.alt_nnz = alt_nnz; end;
-%assert(sum(SYMS{1}.VARS.nDatas) == length(y_obs), "The output function seems to be the wrong length.")
