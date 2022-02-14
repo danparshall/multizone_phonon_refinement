@@ -9,11 +9,15 @@ function SYMS = refine_multizones(SYMS);
 #	modified:   make_vars_mask.m
 #	modified:   simulate_phonon_predictions.m
 
+if system_octave;
+    pkg load optim
+end
+
 
 debug = 1;
 
-VARS=SYMS{1}.VARS;
-varsin=VARS.varsin(:);
+VARS = SYMS{1}.VARS;
+varsin = VARS.varsin(:);		% NOTE: varsin is only refineable variables
 
 y_obs = VARS.y_obs;
 w_obs = VARS.w_obs;
@@ -33,7 +37,6 @@ disp(['  Refining with ' num2str(nZones) ' seperate Q-points']);
 
   opts = optimset ( ...
 		'Jacobian',			'on', ...
-%		'DerivativeCheck',	'off',...
 		'MaxIter',			400,...
 		'Display', 			'iter', ...
 		'TolFun',			1e-10 );
@@ -96,38 +99,22 @@ end
 
 
 
-% === plotting ===
-if 1
-	funcout = calc_full_model(SYMS,varsout);
-	disp('Plotting...')
-	for ind_sym = 1:length(SYMS)
-		SYM = SYMS{ind_sym};
 
-		disp(['  ind_sym : ' num2str(ind_sym)])
-		disp(['Allvars size : ' num2str(size(SYMS{1}.VARS.allvars))]);
-		disp('startvars :')
-		SYM.startvars
-		disp('Cens :')
-		cen = SYMS{1}.VARS.allvars(1:SYMS{1}.VARS.Nph)
-		plot_SYM(SYM);
-	end
-end
-hold off
-
-function [F,J,varargout] = objective(SYMS,vars,y_obs);
+function [F,J,varargout] = objective(SYMS, vars, y_obs);
 %	disp('Calling objective...')
 	weights = 0;		% DerivativeCheck passed when using weights
 
 	if nargout > 1
-		[funcout,J]=calc_full_model(SYMS,vars);
+		[func_out,jac_out] = calc_full_model(SYMS, vars);
+		J = jac_out(:, SYMS{1}.VARS.indfree);
 	else
-		funcout = calc_full_model(SYMS,vars);
+		func_out = calc_full_model(SYMS, vars);
 	end
 
 	if weights
-		F = (funcout - y_obs) .* sqrt(SYMS{1}.VARS.w_obs);
+		F = (func_out - y_obs) .* sqrt(SYMS{1}.VARS.w_obs);
 	else
-		F = funcout - y_obs;
+		F = func_out - y_obs;
 	end
 end
 end
