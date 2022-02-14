@@ -34,15 +34,15 @@ function SYMS=generate_AUX(SYMS);
 %  [12,1] = indfree
 %  [13,1] = peak_aSYMSmetry
 
-
+debug = 1;
 n_cens = size(SYMS{1}.startvars, 1);
 
-for ind = 1:length(SYMS)
+for i_sym = 1:length(SYMS)
 	disp('')
-	disp(["STARTING AUX FOR SYM : " num2str(ind)])
+	disp(["STARTING AUX FOR SYM : " num2str(i_sym)])
 	clear AUX;
-	DAT = SYMS{ind}.DAT;
-	startvars = SYMS{ind}.startvars;
+	DAT = SYMS{i_sym}.DAT;
+	startvars = SYMS{i_sym}.startvars;
 
 	AUX.Nq = size(DAT.ydat,2);
 	AUX.Nph = size(startvars,1);
@@ -56,7 +56,7 @@ for ind = 1:length(SYMS)
 
 	% makes mask and starting values for height fitting, and decides whether to fit a height
 	% mask is same dimensions as data
-	[AUX.mask goodheight free_cenht] = make_aux_mask(SYMS,startvars,ind);
+	[AUX.mask goodheight free_cenht] = make_aux_mask(SYMS,startvars,i_sym);
 	AUX.indE = [0 cumsum(sum(AUX.mask,1))];	% index of length of good points at each Q
 	AUX.goodQ = sum(AUX.mask);
 
@@ -66,39 +66,39 @@ for ind = 1:length(SYMS)
 	goodheight = startvars(:,3:end);
 
 
-	constantBackground = repmat(0,1,AUX.Nq); %min(DAT.ydat);
-
 	% NOTE : we are define the resolution width when we initialize.  In principle we should update the resolution width,
 	% based on our best guess about the peak center; but getting that into the Jacobian would be really difficult.
 	% As a compromise, we just leave the reswidth fixed (not too big a deal, if our original DFT cens weren't far off).
-	reswids = merchop(SYMS{ind}.Ei, SYMS{ind}.chopfreq, goodcen);
+	reswids = merchop(SYMS{i_sym}.Ei, SYMS{i_sym}.chopfreq, goodcen);
 	reswids = repmat(reswids(:),1,AUX.Nq);
 
-	linearBackground = repmat(0,1,AUX.Nq);
+	const_BG = zeros(1,AUX.Nq);
+	linear_BG = zeros(1,AUX.Nq);
 
 	%%% AUX.auxvars
 	%%% page1 is cen/height, page2 is phWid/resWid (resWid is assumed fixed, phWid could be fit)
-	AUX.auxvars(:,:,1) = [goodcen goodheight;...
-			    			0 constantBackground];
-	AUX.auxvars(:,:,2) = [goodwid reswids;...
-			    			0 linearBackground];
+	AUX.auxvars(:,:,1) = [goodcen	goodheight;...
+			    			0 		const_BG];
+	AUX.auxvars(:,:,2) = [goodwid 	reswids;...
+			    			0 		linear_BG];
 
 	% set BOUNDS (have the same structure as auxvars)
+	delta_counts = max(max(DAT.ydat)) - min(min(DAT.ydat))
+	delta_energy = max(AUX.eng) - min(AUX.eng);
+
 	AUX.bounds_L = 0.001 * ones(size(AUX.auxvars));
-	AUX.bounds_L([1:end-1],1,1) = min(DAT.xdat(:,1));		% min center
+	AUX.bounds_L([1:end-1], 1, 1) = 0.1*min(goodcen);			% min center is 10% of minimum DFT prediction
+	AUX.bounds_L([end, 2:end, 1]) = -1 * delta_counts;		% min constant BG set to -10% of observed intensity range
+	AUX.bounds_L([end, 2:end, 2]) = -delta_counts/delta_energy;	% min linear BG
+
 
 	AUX.bounds_H = ones(size(AUX.auxvars));
-%	AUX.bounds_H([1:end-1],1,1) = max(DAT.xdat(:,1));		% max cen is max of range
-	AUX.bounds_H([1:end-1],1,1) = 10*goodcen;				% max cen is 10x the DFT prediction
-	AUX.bounds_H(:,[2:end],1) = 1.5*max(max(DAT.ydat));		% maxheight is 1.5x maxdata
-%	AUX.bounds_H(:,:,2) = Inf;								% no max wid
-
-	AUX.bounds_H([1:end-1],[2:end],2) = repmat(10*abs(reswids(:,1)), 1, AUX.Nq);		% wids, set to 10x the resolution (abs bc non-kinematic become negative)
-	AUX.bounds_H(end,[2:end],1) = max(max(DAT.ydat));		% constant BG max set to max of observed counts
-
-	delta_counts = max(max(DAT.ydat)) - min(min(DAT.ydat));
-	delta_energy = max(AUX.eng) - min(AUX.eng);
+	AUX.bounds_H([1:end-1],1,1) = 10*goodcen;					% max cen is 10x the DFT prediction
+	AUX.bounds_H(:,[2:end],1) = 1.5*max(max(DAT.ydat));			% maxheight is 1.5x maxdata
+	AUX.bounds_H(1:end-1,1,2) = 10*max(goodwid);				% max width is 10x the max DFT prediction
+	AUX.bounds_H(end,[2:end],1) = 0.5*max(max(DAT.ydat));		% constant BG max set to (max of observed counts)/2
 	AUX.bounds_H(end,[2:end],2) = delta_counts/delta_energy;	% linear BG max
+	AUX.bounds_H([1:end-1],[2:end],2) = repmat(10*abs(reswids(:,1)), 1, AUX.Nq);	% set to 10x the resolution (abs bc non-kinematic become negative)
 
 	% setup freevars field (same structure as auxvars, defines which params can be fit)
 	AUX.freevars = ones(size(AUX.auxvars));
@@ -113,5 +113,5 @@ for ind = 1:length(SYMS)
 	AUX.peak_asymmetry = 1.7;		% How wide is low-energy side, relative to high-energy side.  Determined empirically for ARCS, using fityk.
 
 	% attach
-	SYMS{ind}.AUX = AUX;
+	SYMS{i_sym}.AUX = AUX;
 end
