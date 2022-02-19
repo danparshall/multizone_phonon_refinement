@@ -13,6 +13,9 @@ if system_octave;
     pkg load optim
 end
 
+global i_obj		% for counting how many iterations the objective function has executed
+i_obj = 0;
+
 
 debug = 1;
 
@@ -37,7 +40,7 @@ disp(['  Refining with ' num2str(nZones) ' seperate Q-points']);
 
   opts = optimset ( ...
 		'Jacobian',			'on', ...
-		'MaxIter',			400,...
+		'MaxIter',			1000,...
 		'Display', 			'iter', ...
 		'TolFun',			1e-10 );
 
@@ -70,6 +73,8 @@ end
 
 
 if 1
+	tic;
+	disp('Beginning refinement...')
 	[varsout,resnorm,resid,exitflag] = lsqnonlin( ...
 										@(vars) objective(SYMS,vars,y_obs), ...
 										varsin, bounds_lo, bounds_hi, opts);
@@ -81,6 +86,9 @@ if 1
 
 		%	eliminates centers that had no data to fit
 	%	varsout(find(SYMS{1}.VARS.freevars([1:end-1],1,1) == 0)) = NaN;
+	disp(['Refinement complete!  Took ' num2str(i_obj) ' iterations.'])
+	toc;
+
 else
 	varsout = varsin;
 end
@@ -93,16 +101,21 @@ SYMS=assemble_VARS(SYMS);
 %nansum_multizone = sum(isnan(SYMS{1}.AUX.auxvars(:,1,1)))
 
 
-if 1
+if 0
 	disp('Calculating parameter uncertainty...')
 	SYMS = calc_unc(SYMS);
 end
 
 
-
-
 function [F,J,varargout] = objective(SYMS, vars, y_obs);
 %	disp('Calling objective...')
+	global i_obj
+	if mod(i_obj, 5) == 0
+		disp(['Objective iteration : ' num2str(i_obj)]);
+		if system_octave; fflush(stdout); end;
+	end
+	i_obj = i_obj + 1;
+
 	weights = 0;		% DerivativeCheck passed when using weights
 	func_mask = SYMS{1}.VARS.func_mask;
 
