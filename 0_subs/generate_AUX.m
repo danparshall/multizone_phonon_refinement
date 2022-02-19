@@ -1,5 +1,5 @@
-function SYMS=generate_AUX(SYMS);
-% SYMS=generate_AUX(SYMS);
+function SYMS = generate_AUX(SYMS);
+% SYMS = generate_AUX(SYMS);
 %	Each subset of data (a single DAT) has an AUX structure associated with it.
 %	AUX contains auxiliary information about that DAT.
 %
@@ -44,10 +44,6 @@ for i_sym = 1:length(SYMS)
 	DAT = SYMS{i_sym}.DAT;
 	startvars = SYMS{i_sym}.startvars;
 
-	AUX.Nq = size(DAT.y_dat,2);
-	AUX.Nph = size(startvars,1);
-	AUX.wdat = 1./DAT.e_dat.^2;
-
 	if isfield(DAT,'eng');
 		AUX.eng = DAT.eng;
 	else;
@@ -57,13 +53,30 @@ for i_sym = 1:length(SYMS)
 	% makes mask and starting values for height fitting, and decides whether to fit a height
 	% mask is same dimensions as data
 	[AUX.mask goodheight free_cenht] = make_aux_mask(SYMS,startvars,i_sym);
-	AUX.indE = [0 cumsum(sum(AUX.mask,1))];	% index of length of good points at each Q
-	AUX.goodQ = sum(AUX.mask);
-
 
 	goodcen = startvars(:,1);
 	goodwid = startvars(:,2);
 	goodheight = startvars(:,3:end);
+
+
+	% only allow this Q to be used if it has enough data points
+	% Specifically, we require 2 for BG, plus 1 for every peak whose center is within range
+	qpoints = sum(AUX.mask, 1);
+	fittable_Q = find(qpoints > (sum(free_cenht(:, 2:end), 1) + 2));
+	goodheight = goodheight(:, fittable_Q);
+	free_cenht = free_cenht(:, [1, 1+fittable_Q]);
+	AUX.mask = AUX.mask(:, fittable_Q);
+	DAT.y_dat = DAT.y_dat(:, fittable_Q);
+%	DAT.y_dat = DAT.y_dat .* AUX.mask;
+	DAT.e_dat = DAT.e_dat(:, fittable_Q);
+%	DAT.e_dat = DAT.e_dat .* AUX.mask;
+	DAT.Q_hkl = DAT.Q_hkl(fittable_Q);
+
+
+
+	AUX.Nq = size(DAT.y_dat,2);
+	AUX.Nph = size(startvars,1);
+	AUX.wdat = 1./DAT.e_dat.^2;
 
 
 	% NOTE : we are define the resolution width when we initialize.  In principle we should update the resolution width,
@@ -72,7 +85,8 @@ for i_sym = 1:length(SYMS)
 	reswids = merchop(SYMS{i_sym}.Ei, SYMS{i_sym}.chopfreq, goodcen);
 	reswids = repmat(reswids(:),1,AUX.Nq);
 
-	const_BG = zeros(1,AUX.Nq);
+%	const_BG = zeros(1,AUX.Nq);
+	const_BG = min(DAT.y_dat ./ AUX.mask);   % division by mask is to force the out-of-bounds areas to NaN, rather than zeros
 	linear_BG = zeros(1,AUX.Nq);
 
 	%%% AUX.auxvars
@@ -83,13 +97,14 @@ for i_sym = 1:length(SYMS)
 			    			0 		linear_BG];
 
 	% set BOUNDS (have the same structure as auxvars)
-	delta_counts = max(max(DAT.y_dat)) - min(min(DAT.y_dat))
+%	delta_counts = max(max(DAT.y_dat)) - min(min(DAT.y_dat))
+	delta_counts = max(max(DAT.y_dat(AUX.mask))) - min(min(DAT.y_dat(AUX.mask)))
 	delta_energy = max(AUX.eng) - min(AUX.eng);
 
 	AUX.bounds_L = 0.001 * ones(size(AUX.auxvars));
-	AUX.bounds_L([1:end-1], 1, 1) = 0.1*min(goodcen);			% min center is 10% of minimum DFT prediction
-	AUX.bounds_L([end, 2:end, 1]) = -1 * delta_counts;		% min constant BG set to -10% of observed intensity range
-	AUX.bounds_L([end, 2:end, 2]) = -delta_counts/delta_energy;	% min linear BG
+	AUX.bounds_L([1:end-1], 1, 1) = 0.1*min(goodcen);				% min center is 10% of minimum DFT prediction
+	AUX.bounds_L([end, 2:end, 1]) = -0.1 * delta_counts;			% min constant BG set to -10% of observed intensity range
+	AUX.bounds_L([end, 2:end, 2]) = -0.1*delta_counts/delta_energy;	% min linear BG
 
 
 	AUX.bounds_H = ones(size(AUX.auxvars));
@@ -112,6 +127,11 @@ for i_sym = 1:length(SYMS)
 
 	AUX.peak_asymmetry = 1.7;		% How wide is low-energy side, relative to high-energy side.  Determined empirically for ARCS, using fityk.
 
+
+%	disp("Fitting elastic line always...")
+%	AUX.freevars(1, :, 1) = 1;
+
 	% attach
 	SYMS{i_sym}.AUX = AUX;
+	SYMS{i_sym}.DAT = DAT;
 end

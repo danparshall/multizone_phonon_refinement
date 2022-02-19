@@ -24,15 +24,19 @@ N_q=size(ydat,2);
 
 
 %excludes all y values where there is no data
-mask = edat>0;
+mask = edat > 0;
 
 if 1
 	% TODO : this has 3 magic numbers.  Need to make sure they're turned into documented variables
 	goodheight = startvars(:,3:end); 	% startvars is [cen(N_ph,1) wid(N_ph,1) heights(N_ph,N_q)]
 
-	eMin = 3;
-	eMax = 75;
+	eMin = 5;
+	eMax = 70;
 	centers_free = (centers > eMin) & (centers < eMax);
+
+	% also exclude energies outside of fitting range
+	eng_invalid = find( (eng < eMin) | (eng > eMax) );
+	mask(eng_invalid, :) = 0;
 
 	margin = 1;
 	heights_free = repmat(centers_free,1,N_q);
