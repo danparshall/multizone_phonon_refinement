@@ -1,4 +1,4 @@
-function startvars = load_pred_file(path_to_pred_file, DAT, varargin);
+function startvars = load_pred_file(path_to_pred_file, DAT, CONFIG, varargin);
 % Reads a file containing predictions for phonon centers, widths, and heights.
 % Conducts basic consistency checking, so even if a file is hand-edited it
 % won't cause problems downstream.
@@ -6,6 +6,7 @@ function startvars = load_pred_file(path_to_pred_file, DAT, varargin);
 % TODO: support for spreadsheets (which could store Q value as column name)
 
 is_textfile = 0;
+DEFAULT_ENG_MINIMUM = 5;
 
 if exist(path_to_pred_file, 'file') == 2
     [fPath, fName, fExt] = fileparts(path_to_pred_file);
@@ -72,10 +73,16 @@ if nargin > 1
     disp(['    ... params are consistent.'])
 
 
-    ENG_MINIMUM = 5;
-    disp([' Adjusting scale of predictions to match data.  Using energies > ' num2str(ENG_MINIMUM)])
+    if nargin > 2
+        display('Using e_min from config');
+        eng_min = CONFIG.e_min;
+    else
+        display('No config present; using default e_min');
+        eng_min = DEFAULT_ENG_MINIMUM;
+    end
+    disp([' Adjusting scale of predictions to match data.  Using energies > ' num2str(eng_min)])
 
-    ind_eng = find(DAT.eng > ENG_MINIMUM);
+    ind_eng = find(DAT.eng > eng_min);
     max_dat = max(DAT.y_dat(ind_eng, :));   % max val in each column
     max_pred = max(PRED.heights);
     ratio = mean(max_dat ./ max_pred);

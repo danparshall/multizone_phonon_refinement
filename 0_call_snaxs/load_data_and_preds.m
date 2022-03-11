@@ -1,6 +1,8 @@
-function SYMS = load_data_and_preds(paths_DAT, paths_PRED, censcale, varargin);
+function SYMS = load_data_and_preds(paths_DAT, paths_PRED, estimate_elastic, varargin);
 
-estimate_elastic = 1;
+if ~exist('estimate_elastic')
+    estimate_elastic = 1;
+end
 
 class_dat = class(paths_DAT);
 class_pred = class(paths_PRED);
@@ -42,10 +44,10 @@ for i_file = 1:n_dat
     DAT = load_DAT_file(paths_DAT{i_file});
     startvars = load_pred_file(paths_PRED{i_file}, DAT);
 
-    if exist('censcale')
-        disp(["Scaling phonon energies by ", num2str(censcale)])
-        startvars(:, 1) = censcale * startvars(:, 1);
-    end
+%    if exist('censcale')
+%        disp(["Scaling phonon energies by ", num2str(censcale)])
+%        startvars(:, 1) = censcale * startvars(:, 1);
+%    end
 
     if estimate_elastic
         disp('Adding estimate of elastic line to fitting');
