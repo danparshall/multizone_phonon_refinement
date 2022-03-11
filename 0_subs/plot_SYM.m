@@ -1,5 +1,9 @@
-function plot_SYM(SYM);
+function plot_SYM(SYM, ind_start, varargin);
 
+
+if nargin < 2
+    ind_start = 1;
+end
 
 debug = 1;
 
@@ -18,7 +22,7 @@ mask = AUX.mask;
 DAT = SYM.DAT;
 Nq = SYM.AUX.Nq
 
-for ind = 1:Nq
+for ind = ind_start:Nq
     if debug; disp(['Q-ind : ', num2str(ind)]); end;
     if sum(mask(:,ind))>0
         qpoint = DAT.HKL_vals(ind,:);
@@ -46,7 +50,10 @@ for ind = 1:Nq
         plot(cens, hts, 'g*','linewidth',1);    % fitted centers
         plot([0 80],[0 0],'k--');               % x-axis
         
-        axis([AUX.eng(1) AUX.eng(end) -1 10]);
+%        axis([AUX.eng(1) AUX.eng(end) -1 10]);
+        axis([2 75 -0.5 3]);
+        xticks([5:5:75]);
+
         title(['column: ',num2str(ind),',  q point: [', num2str(qpoint(1)) ', ' num2str(qpoint(2)) ', ' num2str(qpoint(3)) ']']);
         xlabel('Energy (meV)');
         ylabel('Intensity (arb. units)');

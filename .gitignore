@@ -1,2 +1,5 @@
 testfit_Nq25
-
+*.pdf
+*.mat
+*.yaml
+*octave-workspace

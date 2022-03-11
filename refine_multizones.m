@@ -40,9 +40,11 @@ disp(['  Refining with ' num2str(nZones) ' seperate Q-points']);
 
   opts = optimset ( ...
 		'Jacobian',			'on', ...
-		'MaxIter',			1000,...
+		'MaxIter',			500,...
 		'Display', 			'iter', ...
-		'TolFun',			1e-10 );
+		'TolFun',			1e-16,
+		'TolX',				1e-8,
+		 );
 
 	
 	%% Check that array sizes 
@@ -110,8 +112,11 @@ end
 function [F,J,varargout] = objective(SYMS, vars, y_obs);
 %	disp('Calling objective...')
 	global i_obj
-	if mod(i_obj, 5) == 0
+	if mod(i_obj, 10) == 0
 		disp(['Objective iteration : ' num2str(i_obj)]);
+		if mod(i_obj, 10) == 0
+			toc;
+		end
 		if system_octave; fflush(stdout); end;
 	end
 	i_obj = i_obj + 1;
