@@ -63,9 +63,9 @@ for inq=1:N_q
 	sim_e(:,inq)=edat;
 end
 
-SYM.DAT.ydat = sim_y;
-SYM.DAT.edat = sim_e;
-SYM.DAT.xdat = sim_x;
+SYM.DAT.y_dat = sim_y;
+SYM.DAT.e_dat = sim_e;
+SYM.DAT.x_dat = sim_x;
 SYM.DAT.eng = eng;
 
 

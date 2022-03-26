@@ -13,26 +13,30 @@ centers = startvars(:,1);
 if isfield(DAT,'eng')
 	eng = DAT.eng;
 else
-	eng = DAT.xdat(:,1);
+	eng = DAT.x_dat(:,1);
 end
 xstep = eng(2)-eng(1);
-ydat = DAT.ydat;
-edat = DAT.edat;
+ydat = DAT.y_dat;
+edat = DAT.e_dat;
 
 N_ph=length(centers);
 N_q=size(ydat,2);
 
 
 %excludes all y values where there is no data
-mask = edat>0;
+mask = edat > 0;
 
 if 1
 	% TODO : this has 3 magic numbers.  Need to make sure they're turned into documented variables
 	goodheight = startvars(:,3:end); 	% startvars is [cen(N_ph,1) wid(N_ph,1) heights(N_ph,N_q)]
 
-	eMin = 3;
-	eMax = 75;
+	eMin = 5;
+	eMax = 70;
 	centers_free = (centers > eMin) & (centers < eMax);
+
+	% also exclude energies outside of fitting range
+	eng_invalid = find( (eng < eMin) | (eng > eMax) );
+	mask(eng_invalid, :) = 0;
 
 	margin = 1;
 	heights_free = repmat(centers_free,1,N_q);

@@ -1,7 +1,9 @@
 function SYMS = calc_unc(SYMS)
-% use
+% use QR decomposition to estimate uncertainty of parameters
 
 
+ts = time;
+disp(['  Estimating parameter uncertainty...'])
 debug = 0;
 
 VARS = SYMS{1}.VARS;
@@ -34,6 +36,7 @@ resnorm = residuals.^2;
 
 jac = jac(func_mask, VARS.indfree);
 [N_pts,N_vars] = size(jac);
+disp('  .... decomposing jacobian')
 [Q,R] = qr(jac,0);
 covar = sum(inv(R).^2, 2);
 
@@ -47,3 +50,7 @@ for ind=1:length(SYMS)
     SYMS{ind}.AUX.uncertainty = zeros(size(freevars));
 	SYMS{ind}.AUX.uncertainty(find(freevars)) = VARS.uncertainty(vars_mask(find(freevars)));
 end
+
+te = time;
+tdelta = te - ts;
+disp(['    .... finished; elapsed time ' num2str(tdelta)])

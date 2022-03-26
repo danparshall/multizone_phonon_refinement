@@ -43,6 +43,7 @@ for i_sym = 1:n_sym
     if (length(find(poss_cen_fitting)) ~= n_cen)
         if  (i_sym == 1);
             disp("WARNING : some phonon peaks not fittable in any zone; these are being forced to non-free");
+            if system_octave; fflush(stdout); end;
         end;
         SYMS{i_sym}.AUX.freevars(1:n_cen, 1, 1) = poss_cen_fitting .* SYMS{i_sym}.AUX.freevars(1:n_cen, 1, 1);
         SYMS{i_sym}.AUX.freevars(1:n_cen, 1, 2) = poss_cen_fitting .* SYMS{i_sym}.AUX.freevars(1:n_cen, 1, 2);
@@ -80,10 +81,10 @@ for i_sym = 1:n_sym;
     nQ = AUX.Nq;
     nE = length(AUX.eng);
 
-    y_masked = DAT.ydat .* AUX.mask;
+    y_masked = DAT.y_dat .* AUX.mask;
     y_obs = [y_obs; y_masked(:)];
 
-    w_masked = (1./DAT.edat).^2 .* AUX.mask;
+    w_masked = (1./DAT.e_dat).^2 .* AUX.mask;
     w_obs = [w_obs; w_masked(:)];
 
     this_mask = find(AUX.mask);

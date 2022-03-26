@@ -18,12 +18,12 @@ for ind = 1:Nq
     if debug; disp(['Q-ind : ', num2str(ind)]); end;
     if sum(mask(:,ind))>0
         qpoint = DAT.HKL_vals(ind,:);
-        xdata = DAT.xdat(mask(:,ind),ind);
-        ydata = DAT.ydat(mask(:,ind),ind);
-        edata = DAT.edat(mask(:,ind),ind);
+        xdata = DAT.x_dat(mask(:,ind),ind);
+        ydata = DAT.y_dat(mask(:,ind),ind);
+        edata = DAT.e_dat(mask(:,ind),ind);
 
 
-        xfit = DAT.xdat(mask(:,ind),ind);
+        xfit = DAT.x_dat(mask(:,ind),ind);
         yfit = calc_singleQ(AUX, ind);
         yfit = yfit(mask(:,ind))';
         if debug; [ydata, yfit]; end;
