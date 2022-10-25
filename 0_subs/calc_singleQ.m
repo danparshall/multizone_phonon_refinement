@@ -24,7 +24,8 @@ w2 = FWHM * 1/(asymm+1);
 % Background
 constant = AUX.auxvars(end,idx+1,1);
 slope = AUX.auxvars(end,idx+1,2);
-
+%[cen, wid, hts, res]
+%[constant, slope]
 
 %%%% INIT
 modelout = zeros(size(eng));

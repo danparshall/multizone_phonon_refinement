@@ -81,9 +81,9 @@ for i_sym = 1:n_sym;
     nQ = AUX.Nq;
     nE = length(AUX.eng);
 
+    % Note that y_obs & w_obs are column vectors with numel = prod(size(y_dat));
     y_masked = DAT.y_dat .* AUX.mask;
     y_obs = [y_obs; y_masked(:)];
-
     w_masked = (1./DAT.e_dat).^2 .* AUX.mask;
     w_obs = [w_obs; w_masked(:)];
 

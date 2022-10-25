@@ -51,7 +51,7 @@ for ind = ind_start:Nq
         plot([0 80],[0 0],'k--');               % x-axis
         
 %        axis([AUX.eng(1) AUX.eng(end) -1 10]);
-        axis([2 75 -0.5 3]);
+        axis([2 75 -0.1 2]);
         xticks([5:5:75]);
 
         title(['column: ',num2str(ind),',  q point: [', num2str(qpoint(1)) ', ' num2str(qpoint(2)) ', ' num2str(qpoint(3)) ']']);
