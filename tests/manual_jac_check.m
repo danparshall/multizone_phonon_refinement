@@ -8,8 +8,8 @@ function jacobian = manual_jac_check(SYMS);
 % jacobian falls to zero faster than the calculated version (I think because of floating-point effects),
 % so these don't line up perfectly.
 
-DELTA = 0.000001;
-TOLERANCE = 0.001;
+DELTA = 0.000001;  % Change of input variables; should be large enough to avoid floating-point errors; ~e-6 or so
+TOLERANCE = 0.001; % allowed difference between the closed-form and finite-difference results; should be larger than DELTA
 show_plots = 1;
 debug = 1;
 
@@ -44,6 +44,9 @@ jvals = [];
 i_cells = 0;
 indfree = VARS.indfree;         %% varsin is only the variables that are fitted; indfree are their indices
 for i = 1:length(indfree)
+    if mod(i, 10) == 0
+        disp(["Checking variable " num2str(i)])
+    end
     ivar = indfree(i);          %% column number of jacobian for this variable
     varsin = VARS.varsin;
     var_value = varsin(i);
