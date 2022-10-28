@@ -41,6 +41,7 @@ disp('  .... decomposing jacobian')
 covar = sum(inv(R).^2, 2);
 
 % uncertainty of each parameter of varsin
+disp('  .... calculating covar of varsin')
 VARS.uncertainty(VARS.indfree) = full(sqrt(covar*sum(resnorm)/(N_pts-N_vars)));
 
 % update the uncertainty for each parameter in AUX.auxvars

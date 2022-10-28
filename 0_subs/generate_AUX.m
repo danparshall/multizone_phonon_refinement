@@ -32,7 +32,7 @@ function SYMS = generate_AUX(SYMS);
 %  [10,1] = bounds_H
 %  [11,1] = freevars
 %  [12,1] = indfree
-%  [13,1] = peak_aSYMSmetry
+%  [13,1] = peak_asymmetry
 
 debug = 1;
 n_cens = size(SYMS{1}.startvars, 1);
@@ -60,44 +60,65 @@ for i_sym = 1:length(SYMS)
 
 
 	% only allow this Q to be used if it has enough data points
-	% Specifically, we require 2 for BG, plus 1 for every peak whose center is within range
+	% Specifically, we require 2 for BG, plus 3 for every peak whose center is within range
 	qpoints = sum(AUX.mask, 1);
-	fittable_Q = find(qpoints > (sum(free_cenht(:, 2:end), 1) + 2));
+	fittable_Q = find(qpoints > (2 + 3*sum(free_cenht(:, 2:end), 1) ));
 	goodheight = goodheight(:, fittable_Q);
 	free_cenht = free_cenht(:, [1, 1+fittable_Q]);
 	AUX.mask = AUX.mask(:, fittable_Q);
 	DAT.y_dat = DAT.y_dat(:, fittable_Q);
-%	DAT.y_dat = DAT.y_dat .* AUX.mask;
 	DAT.e_dat = DAT.e_dat(:, fittable_Q);
-%	DAT.e_dat = DAT.e_dat .* AUX.mask;
-	DAT.Q_hkl = DAT.Q_hkl(fittable_Q);
+	DAT.Q_hkl = DAT.Q_hkl(fittable_Q, :);
+	DAT.Qmags = DAT.Qmags(fittable_Q);
 
-
-
+	% now set Nq
 	AUX.Nq = size(DAT.y_dat,2);
 	AUX.Nph = size(startvars,1);
-	AUX.wdat = 1./DAT.e_dat.^2;
 
+	% user-provided fit settings can be used, otherwise just take the defaults
+	if isfield(SYMS{1}, 'CONFIG')
+		CONFIG = SYMS{1}.CONFIG;
+		if length(CONFIG.refine_centers) > 0
+			assert(length(CONFIG.refine_centers) == AUX.Nph, "The number of phonons specified in CONFIG.refine_centers inconsistent with AUX.Nph")
+			refine_cens = CONFIG.refine_centers;
+			refine_wids = CONFIG.refine_widths;
+		else
+			refine_cens = free_cenht(:, 1);
+			refine_wids = refine_cens;
+		end
+		refine_const_bg = CONFIG.refine_const_bg;
+		refine_linear_bg = CONFIG.refine_linear_bg;
+	else
+		disp('No CONFIG file specified; using defaults for fitting centers, widths, and backgrounds.')
+		refine_cens = free_cenht(:, 1);
+		refine_wids = refine_cens;
+		refine_const_bg = 1;
+		refine_linear_bg = 0;
+	end
 
-	% NOTE : we are define the resolution width when we initialize.  In principle we should update the resolution width,
-	% based on our best guess about the peak center; but getting that into the Jacobian would be really difficult.
+	% NOTE : we define the resolution width when we initialize.  In principle we should update the resolution width
+	% based on our current best guess about the peak center; but getting that into the Jacobian would be really difficult.
 	% As a compromise, we just leave the reswidth fixed (not too big a deal, if our original DFT cens weren't far off).
-	reswids = merchop(SYMS{i_sym}.Ei, SYMS{i_sym}.chopfreq, goodcen);
-	reswids = repmat(reswids(:),1,AUX.Nq);
+	reswids = merchop(SYMS{i_sym}.DAT.Ei, SYMS{i_sym}.DAT.chopfreq, goodcen);
+%	reswids = merchop(SYMS{i_sym}.Ei, SYMS{i_sym}.chopfreq, goodcen);
+	reswids = repmat(reswids(:), 1, AUX.Nq);
 
-%	const_BG = zeros(1,AUX.Nq);
-	const_BG = min(DAT.y_dat ./ AUX.mask);   % division by mask is to force the out-of-bounds areas to NaN, rather than zeros
+	tmp = DAT.y_dat;
+	tmp(~AUX.mask) = nan;
+%	const_BG = min(tmp);
+	const_BG = zeros(1,AUX.Nq);
+%	const_BG = min(DAT.y_dat ./ AUX.mask)   % division by mask is to force the out-of-bounds areas to NaN, rather than zeros
 	linear_BG = zeros(1,AUX.Nq);
 
 	%%% AUX.auxvars
-	%%% page1 is cen/height, page2 is phWid/resWid (resWid is assumed fixed, phWid could be fit)
+	%%% page1 is cen/height, page2 is phWid/resWid (resWid is assumed fixed, phWid can be fit)
 	AUX.auxvars(:,:,1) = [goodcen	goodheight;...
 			    			0 		const_BG];
 	AUX.auxvars(:,:,2) = [goodwid 	reswids;...
 			    			0 		linear_BG];
 
-	% set BOUNDS (have the same structure as auxvars)
-%	delta_counts = max(max(DAT.y_dat)) - min(min(DAT.y_dat))
+	% set BOUNDS (have the same structure as auxvars); 
+	% NOTE: https://www.mathworks.com/help/optim/ug/iterations-can-violate-constraints.html
 	delta_counts = max(max(DAT.y_dat(AUX.mask))) - min(min(DAT.y_dat(AUX.mask)))
 	delta_energy = max(AUX.eng) - min(AUX.eng);
 
@@ -120,16 +141,17 @@ for i_sym = 1:length(SYMS)
 	AUX.freevars(end,1,:) = 0;						% placeholder variables, not actually fit
 	AUX.freevars([1:end-1],:,1) = free_cenht;		% which heights are fitted is determined in make_aux_mask.m
 	AUX.freevars([1:end-1],[2:end],2)=0;			% res widths aren't free
-	AUX.freevars([1:end-1],1,2) = 1;				% phonon widths (0/1 fixed/free)
-	AUX.freevars(end,[2:end],1) = 1;				% constant background (0/1 fixed/free)
-	AUX.freevars(end,[2:end],2) = 1;				% linear background (0/1 fixed/free)
+	AUX.freevars(end,[2:end],1) = refine_const_bg;	% constant background (0/1 fixed/free)
+	AUX.freevars(end,[2:end],2) = refine_linear_bg;	% linear background (0/1 fixed/free)
+
+	% which centers/widths are refined is set either in CONFIG, or in aux_make_mask.
+	AUX.freevars([1:end-1],1,2) = refine_wids;		% phonon widths (0/1 fixed/free)
+	AUX.freevars([1:end-1],1,1) = refine_cens;		% phonon centers (using )
 	AUX.indfree = find(AUX.freevars);
 
-	AUX.peak_asymmetry = 1.7;		% How wide is low-energy side, relative to high-energy side.  Determined empirically for ARCS, using fityk.
+	AUX.peak_asymmetry = DAT.peak_asymmetry;
+%	AUX.peak_asymmetry = SYMS{i_sym}.peak_asymmetry;
 
-
-%	disp("Fitting elastic line always...")
-%	AUX.freevars(1, :, 1) = 1;
 
 	% attach
 	SYMS{i_sym}.AUX = AUX;

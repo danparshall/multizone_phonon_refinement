@@ -10,13 +10,13 @@ show_plots = 1;
 
 %% manual, for hypothetical cubic crystal (simulation only handles cubic)
 XTAL.latt = 4.287;
-%XTAL.cens = [4, 7, 10, 15, 25, 30];
-XTAL.cens = [4, 4.5, 5, 5.5, 6, 7];
+XTAL.cens = [4, 7, 10, 15, 25, 30];
+%XTAL.cens = [4, 4.5, 5, 5.5, 6, 7];
 %XTAL.cens = [15, 25, 40, 4, 4.5, 5];
 XTAL.wids = 0.04 * ones(size(XTAL.cens));
 
 junk_scale = 0.05
-pred_error = 0.01;   % How close the starting values of the parameters are to the true values; lower values simulate a more accurate DFT prediction 
+pred_error = 0.1;   % How close the starting values of the parameters are to the true values; lower values simulate a more accurate DFT prediction 
 
 
 SYMS = {};
@@ -25,6 +25,7 @@ if 1
     SYM.Ei=30;
     SYM.chopfreq=600;
     SYM.eng=[3 : 0.1 : SYM.Ei]';
+    SYM.peak_asymmetry = 1.7;
     max_Qs = 30;
 
     % simulated data (don't edit)
@@ -34,6 +35,9 @@ if 1
     SYM.sim_vars = sim_vars;
     SYM.startvars = startvars;
     SYM.true_y = true_y;
+    SYM.DAT.peak_asymmetry = SYM.peak_asymmetry;
+    SYM.DAT.Ei = SYM.Ei;
+    SYM.DAT.chopfreq = SYM.chopfreq;
     n_sym = length(SYMS) + 1;
     SYMS{n_sym} = SYM;
 end
@@ -45,6 +49,7 @@ if 1
     SYM.Ei=50;
     SYM.chopfreq=600;
     SYM.eng=[2: 0.25 :SYM.Ei]';
+    SYM.peak_asymmetry = 1.7;
     max_Qs = 50
 
     % simulated data (don't edit)
@@ -53,6 +58,9 @@ if 1
     SYM.sim_vars = sim_vars;
     SYM.startvars = startvars;
     SYM.true_y = true_y;
+    SYM.DAT.peak_asymmetry = SYM.peak_asymmetry;
+    SYM.DAT.Ei = SYM.Ei;
+    SYM.DAT.chopfreq = SYM.chopfreq;
     n_sym = length(SYMS) + 1;
     SYMS{n_sym} = SYM;
 end
@@ -86,8 +94,8 @@ if run_fit
 
     % === plotting ===
     if show_plots
-        disp('Plotting...')
         for ind_sym = 1:length(SYMS)
+            disp(['Plotting SYM ', num2str(ind_sym)]);
             SYM = SYMS{ind_sym};
             AUX = SYM.AUX;
 
@@ -104,7 +112,11 @@ if run_fit
                 disp('')
 
                 disp('uncertainty (page1) :')
-                disp(AUX.uncertainty(:,:,1))
+                if isfield(AUX, "uncertainty")
+                    disp(AUX.uncertainty(:,:,1))
+                else
+                    disp("No uncertainty calculation done; edit 'refine_multizones'")
+                end
                 disp('---------------')
                 disp('')
             end

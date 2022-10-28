@@ -83,12 +83,13 @@ if length(Q_mags) > max_Qs
 end
 
 % simulate peak heights
-heights = 2*rand(size(mask));   % average height is 1
+heights = rand(size(mask));   % average height is 1
 heights = heights .* mask;
 sim_vars = [cens(:), wids(:), heights];
 
 
-SYM.DAT.HKL_vals = HKL_vals;
-SYM.DAT.Q_mag = Q_mags;
+%SYM.DAT.HKL_vals = HKL_vals;
+SYM.DAT.Q_hkl = HKL_vals;
+SYM.DAT.Qmags = Q_mags;
 SYM.E_maxes = E_maxes;  % kinematic contstraint; not needed for real data.
 end  % end-function

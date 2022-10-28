@@ -1,7 +1,7 @@
 function plot_SYM_and_true(SYM, true_y);
 
 
-debug = 0;
+debug = 1;
 
 if debug
     disp('startvars :')
@@ -14,10 +14,12 @@ mask = AUX.mask;
 DAT = SYM.DAT;
 Nq = SYM.AUX.Nq;
 
+if debug; disp(['Mask size : ', num2str(size(mask))]); end;
+
 for ind = 1:Nq
-    if debug; disp(['Q-ind : ', num2str(ind)]); end;
+    if debug; disp(['Q-ind : ', num2str(ind)]); fflush(stdout); end;
     if sum(mask(:,ind))>0
-        qpoint = DAT.HKL_vals(ind,:);
+        qpoint = DAT.Q_hkl(ind,:);
         xdata = DAT.x_dat(mask(:,ind),ind);
         ydata = DAT.y_dat(mask(:,ind),ind);
         edata = DAT.e_dat(mask(:,ind),ind);
@@ -25,8 +27,9 @@ for ind = 1:Nq
 
         xfit = DAT.x_dat(mask(:,ind),ind);
         yfit = calc_singleQ(AUX, ind);
-        yfit = yfit(mask(:,ind))';
-        if debug; [ydata, yfit]; end;
+%        size(yfit)
+%        yfit = yfit(mask(:,ind))';
+        if debug; [ydata, yfit(:)]; end;
 
         cens = AUX.auxvars(1:end-1, 1, 1);
         hts = AUX.auxvars(1:end-1, 1+ind, 1);   % heights
@@ -35,20 +38,21 @@ for ind = 1:Nq
         errorbar(xdata,ydata,edata,'b--');
         hold on; 
         plot(xfit,yfit,'r-','linewidth',1);     % best-fit line
-        plot(cens, hts, 'g*','linewidth',1);    % fitted centers
-
-        range_xmax = max([0.8*max(AUX.eng), 1.2*max(cens)]);
-        plot([0 range_xmax],[0 0],'k--');               % x-axis
 
         if exist('true_y')
-            plot(xfit, true_y(mask(:,ind), ind), 'r:', 'linewidth', 2);
+            plot(SYM.sim_vars(:,1), SYM.sim_vars(:, 2+ind), 'g*');   % true underlying peak centers/heights
+            plot(xfit, true_y(mask(:,ind), ind), 'g:', 'linewidth', 2);  % ideal scan, given the above
         end
+
+        range_xmax = max([0.7*max(AUX.eng), 1.2*max(cens)]);
+        plot([0 range_xmax],[0 0],'k--');               % x-axis
+        plot(cens, hts, 'r*','linewidth',1);    % fitted centers
         
         axis([DAT.eng(1) range_xmax]);
         title(['column: ',num2str(ind),', q point: ',num2str(qpoint)]);
         xlabel('Energy (meV)');
         ylabel('Intensity (arb. units)');
-        legend('Actual Data', 'Fit Data')
+        legend('Noisy Data', 'Fit Data', 'Ground Truth')
         pause
     end
 end   % end loop

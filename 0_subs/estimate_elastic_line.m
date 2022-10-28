@@ -5,3 +5,7 @@ WINDOW = 5;
 inds_elastic = find( (DAT.eng > -WINDOW) & (DAT.eng < WINDOW) );
 assert(length(inds_elastic) > 1, 'Need finite number of energies for elastic window.');
 elastic = max(DAT.y_dat(inds_elastic, :));
+
+% fill nulls
+avg = median(elastic(~isnan(elastic)));
+elastic(isnan(elastic)) = avg;
