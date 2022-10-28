@@ -17,7 +17,7 @@ global i_obj		% for counting how many iterations the objective function has exec
 i_obj = 0;
 
 
-debug = 1;
+DEBUG = 0;
 
 VARS = SYMS{1}.VARS;
 varsin = VARS.varsin(:);		% NOTE: varsin is only refineable variables
@@ -31,22 +31,32 @@ for ind = 1:length(SYMS)
 	nZones = nZones + length(find(sum(SYMS{ind}.AUX.mask)));
 end
 disp(['  Refining with ' num2str(nZones) ' seperate Q-points']);
-%disp(' ');
-%disp(' ');
+
+if isfield(SYMS{1}, 'CONFIG')
+	CONFIG = SYMS{1}.CONFIG;
+else
+	CONFIG = {};
+end
 
 
-
-%% === fit data ===
-
-  opts = optimset ( ...
-		'Jacobian',			'on', ...
-		'MaxIter',			500,...
-		'Display', 			'iter', ...
-		'TolFun',			1e-16,
-		'TolX',				1e-8,
-		 );
+%% set optimization parameters
+if isfield(CONFIG, 'optimset')
+	disp(['Using optimization parameters defined in config.'])
+else
+	disp(['Using default optimization parameters'])
+	opts = optimset ( ...
+			'Jacobian',			'on', ...
+			'MaxIter',			500,...
+			'Display', 			'iter', ...
+			'TolFun',			1e-18, ...
+			'TolX',				1e-12,
+			'CheckGradients',	1
+			);
+end
 
 	
+
+	%% === fit data ===
 	%% Check that array sizes 
 	[~,maxsize] = computer;
 	if system_octave;
@@ -58,7 +68,7 @@ disp(['  Refining with ' num2str(nZones) ' seperate Q-points']);
 	assert(length(varsin)*length(y_obs) < maxsize, 'The number of elements in the Jacobian is greater than the maxiumum array length that can be indexed.');
 
 
-	if debug
+	if DEBUG
 		disp([' size(vars):' num2str(size(varsin))]);
 		disp([' size(ydat):' num2str(size(y_obs))]);
 		disp('  OPTS : ')
@@ -73,27 +83,39 @@ else
 	bounds_hi = VARS.bounds_H(VARS.indfree);
 end
 
-
+tic;
+disp('Beginning refinement...')
 if 1
-	tic;
-	disp('Beginning refinement...')
+	disp("Using 'lsqnonlin'")
+%	[varsout,resnorm,resid,exitflag] = lsqnonlin( ...
+%										@(vars) objective(SYMS,vars,y_obs), ...
+%										varsin, bounds_lo, bounds_hi, opts);
+
 	[varsout,resnorm,resid,exitflag] = lsqnonlin( ...
 										@(vars) objective(SYMS,vars,y_obs), ...
 										varsin, bounds_lo, bounds_hi, opts);
 
 
 	%% === post-process ===
+	report_exitflag(exitflag);
 
-		report_exitflag(exitflag);
+elseif 1
 
-		%	eliminates centers that had no data to fit
-	%	varsout(find(SYMS{1}.VARS.freevars([1:end-1],1,1) == 0)) = NaN;
-	disp(['Refinement complete!  Took ' num2str(i_obj) ' iterations.'])
-	toc;
+	disp("Using 'lsqcurvefit'")
+	[varsout,resnorm,resid,exitflag] = lsqcurvefit( ...
+										@(vars) objective_curvefit(SYMS,vars,y_obs), ...
+										varsin, bounds_lo, bounds_hi, opts);
+
+
+	%% === post-process ===
+	report_exitflag(exitflag);
 
 else
+	disp("Skipping refinement")
 	varsout = varsin;
 end
+disp(['Refinement complete!  Took ' num2str(i_obj) ' iterations.'])
+toc;
 
 %% === update and uncertainty ===
 SYMS=update_AUX(SYMS,varsout);
@@ -110,7 +132,11 @@ end
 
 
 function [F,J,varargout] = objective(SYMS, vars, y_obs);
-%	disp('Calling objective...')
+
+	use_jac = (nargout > 1);
+	USE_WEIGHTS = 0;
+
+	%% track current iteration
 	global i_obj
 	if mod(i_obj, 10) == 0
 		disp(['Objective iteration : ' num2str(i_obj)]);
@@ -121,21 +147,93 @@ function [F,J,varargout] = objective(SYMS, vars, y_obs);
 	end
 	i_obj = i_obj + 1;
 
-	weights = 0;		% DerivativeCheck passed when using weights
+
+	%% calculate objective function (and derivative)
 	func_mask = SYMS{1}.VARS.func_mask;
 
-	if nargout > 1
+	if use_jac
+		[func_out, jac_out] = calc_full_model(SYMS, vars);
+		J = jac_out(func_mask, SYMS{1}.VARS.indfree);
+	else
+		func_out = calc_full_model(SYMS, vars);
+	end
+
+	% apply weights
+	if USE_WEIGHTS
+		weights = sqrt(SYMS{1}.VARS.w_obs);
+		F = (func_out - y_obs) .* weights;
+		if use_jac
+			J = J .* repmat(weights(func_mask), 1, size(J, 2));
+		end
+	else
+		F = func_out - y_obs;
+	end
+	F = F(func_mask);
+
+	if DEBUG
+	disp([' func_out :', num2str(size(func_out))])
+	disp(['func_mask :', num2str(size(func_mask))])
+	disp([' y_obs : ' num2str(size(y_obs))])
+	disp([" F : ", num2str(size(F))])
+		size(jac_out)
+		tmp  = sum(jac_out);
+		tmp(1:7)
+		pause()
+	end
+end
+
+
+function [F,J,varargout] = objective_curvefit(SYMS, vars, y_obs);
+
+	use_jac = (nargout > 1);
+	USE_WEIGHTS = 1;
+
+	%% track current iteration
+	global i_obj
+	if mod(i_obj, 10) == 0
+		disp(['Objective iteration : ' num2str(i_obj)]);
+		if mod(i_obj, 10) == 0
+			toc;
+		end
+		if system_octave; fflush(stdout); end;
+	end
+	i_obj = i_obj + 1;
+
+
+	%% calculate objective function (and derivative)
+	func_mask = SYMS{1}.VARS.func_mask;
+
+	if use_jac
 		[func_out,jac_out] = calc_full_model(SYMS, vars);
 		J = jac_out(func_mask, SYMS{1}.VARS.indfree);
 	else
 		func_out = calc_full_model(SYMS, vars);
 	end
 
-	if weights
-		F = (func_out - y_obs) .* sqrt(SYMS{1}.VARS.w_obs);
-	else
-		F = func_out - y_obs;
+	% apply weights
+	if USE_WEIGHTS
+%		weights = sqrt(SYMS{1}.VARS.w_obs);
+		weights = SYMS{1}.VARS.w_obs;
+		F = func_out .* weights;
+		if use_jac
+			J = J .* repmat(weights(func_mask), 1, size(J, 2));
+		end
 	end
+
+	%
 	F = F(func_mask);
+
+	if DEBUG
+	disp([' func_out :', num2str(size(func_out))])
+	disp(['func_mask :', num2str(size(func_mask))])
+	disp([' y_obs : ' num2str(size(y_obs))])
+	disp([" F : ", num2str(size(F))])
+		size(jac_out)
+		tmp  = sum(jac_out);
+		tmp(1:7)
+		pause()
+	end
 end
+
+
 end
