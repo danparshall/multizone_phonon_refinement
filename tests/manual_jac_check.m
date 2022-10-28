@@ -23,7 +23,7 @@ if show_plots;
     disp('Assembled jac plotted...')
     fflush(stdout);
     pause();
-    fig_vars = figure('Name', 'Derivative');
+    fig_vars = figure('Name', 'Derivative');   % only plots if one of the derivatives doesn't match
 end;
 
 n_cen = VARS.Nph;
@@ -120,23 +120,12 @@ for i = 1:length(indfree)
     rows_active = find(func_deriv);
     n_rows_active = length(rows_active);
 
-    if n_rows_active > 0            %% cell2mat is too stupid to handle empty arrays
-%        disp('appending...')
-        i_cells = i_cells + 1;
-        cols_active = repmat(ivar, length(rows_active), 1);
-%        row_inds{i_cells} = rows_active';
-%        col_inds{i_cells} = cols_active';
-%        jac_vals{i_cells} = func_deriv(find(func_deriv));
-        jrows = [jrows; rows_active(:)];
-        jcols = [jcols; cols_active(:)];
-        jvals = [jvals; func_deriv(find(func_deriv))(:)];
-    end
+    i_cells = i_cells + 1;
+    cols_active = repmat(ivar, length(rows_active), 1);
+    jrows = [jrows; rows_active(:)];
+    jcols = [jcols; cols_active(:)];
+    jvals = [jvals; func_deriv(rows_active)(:)];
 end
-%row_inds
-%col_inds
-jrows = cell2mat(row_inds);
-jcols = cell2mat(col_inds);
-jvals = cell2mat(jac_vals);
 
 
 n_jrows = sum(VARS.nQs .* VARS.nEs);
