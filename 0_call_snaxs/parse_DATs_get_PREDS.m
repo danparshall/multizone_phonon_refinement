@@ -69,12 +69,12 @@ filelist_DATs = {
 
 
 pred_files = cell();
-for ifile = 1:length(filelist_DATs)
+for ifile = 1:1 #length(filelist_DATs)
 
     %% load DAT
     fname = filelist_DATs{ifile};
     DAT = load_DAT_file([folder_DATs, fname]);
-    Q_hkl = cast(DAT.Q_hkl, 'double');
+    Q_hkl = cast(DAT.Q_hkl, 'double');          % cast as double to prevent weird behavior for ints
 
     %% generate predictions
     [centers, widths, heights] = query_snaxs_startvars(PAR, Q_hkl);
