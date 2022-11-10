@@ -1,11 +1,12 @@
 function plot_SYM_and_true(SYM, true_y);
 
 
-debug = 1;
+debug = 0;
 
 if debug
     disp('startvars :')
     SYM.startvars
+    disp('sim_vars :')
     SYM.sim_vars
 end
 
@@ -40,7 +41,9 @@ for ind = 1:Nq
         plot(xfit,yfit,'r-','linewidth',1);     % best-fit line
 
         if exist('true_y')
-            plot(SYM.sim_vars(:,1), SYM.sim_vars(:, 2+ind), 'g*');   % true underlying peak centers/heights
+            heights = SYM.sim_vars(:, 3:end);
+%            plot(SYM.sim_vars(:,1), SYM.sim_vars(:, 2+ind), 'g*');   % true underlying peak centers/heights
+            plot(SYM.sim_vars(:,1), heights(:,ind), 'g*');   % true underlying peak centers/heights
             plot(xfit, true_y(mask(:,ind), ind), 'g:', 'linewidth', 2);  % ideal scan, given the above
         end
 

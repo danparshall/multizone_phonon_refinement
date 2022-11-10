@@ -29,8 +29,8 @@ heights = sim_vars(:, 3:end);
 
 
 if ~exist('junk_scale'); junk_scale=0.4; end
-sim_y=zeros(length(eng),N_q);
-sim_e=sim_y;
+sim_y = zeros(length(eng),N_q);
+sim_e = sim_y;
 true_y = sim_y;
 sim_x = repmat(eng,1,size(sim_y,2));	% simulating Q
 

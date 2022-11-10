@@ -10,27 +10,30 @@ show_plots = 1;
 
 %% manual, for hypothetical cubic crystal (simulation only handles cubic)
 XTAL.latt = 4.287;
-XTAL.cens = [4, 7, 10, 15, 25, 30];
+XTAL.cens = [6, 8, 11, 15, 20, 22, 25, 30];
+%XTAL.cens = [4, 7, 10];
+
+%XTAL.cens = [7.92   12.02  17  20.96   26.49  30  33.45  36  40.09  45  59.83  62.06] ;
+XTAL.cens = [8, 12, 17, 21, 26.5, 30, 33.5, 36, 40, 45, 60, 62];
 %XTAL.cens = [4, 4.5, 5, 5.5, 6, 7];
 %XTAL.cens = [15, 25, 40, 4, 4.5, 5];
 XTAL.wids = 0.04 * ones(size(XTAL.cens));
 
-junk_scale = 0.05
-pred_error = 0.1;   % How close the starting values of the parameters are to the true values; lower values simulate a more accurate DFT prediction 
+junk_scale = 0.2
+pred_error = 0.07;   % How close the starting values of the parameters are to the true values; lower values simulate a more accurate DFT prediction 
 
 
 SYMS = {};
 if 1
     %% user-defined params
-    SYM.Ei=30;
+    SYM.Ei=100;
     SYM.chopfreq=600;
-    SYM.eng=[3 : 0.1 : SYM.Ei]';
+    SYM.eng=[4 : 0.25 : SYM.Ei]';
     SYM.peak_asymmetry = 1.7;
-    max_Qs = 30;
+    max_Qs = 0;
 
     % simulated data (don't edit)
     [SYM, sim_vars] = simulate_phonon_predictions(SYM, XTAL, max_Qs);
-    sim_vars
     [SYM,startvars,true_y] = simulate_data_from_predictions(SYM, sim_vars, junk_scale, pred_error);
     SYM.sim_vars = sim_vars;
     SYM.startvars = startvars;
@@ -44,11 +47,11 @@ end
 
 
 
-if 1
+if 0
     %% user-defined params
     SYM.Ei=50;
     SYM.chopfreq=600;
-    SYM.eng=[2: 0.25 :SYM.Ei]';
+    SYM.eng=[2: 0.5 :SYM.Ei]';
     SYM.peak_asymmetry = 1.7;
     max_Qs = 50
 
@@ -87,6 +90,16 @@ disp([' length(y_obs) : ', num2str(length(VARS.y_obs)) ';  sum(isnan(y_obs)) : '
 disp([' length(w_obs) : ', num2str(length(VARS.w_obs)) ';  sum(isnan(w_obs)) : ', num2str(sum(isnan(VARS.w_obs)))]);
 
 
+if 0
+    for ind = 1:SYMS{1}.AUX.Nq
+        this_dat = SYMS{1}.DAT.y_dat(SYMS{1}.AUX.mask(:,ind));
+        this_err = SYMS{1}.DAT.e_dat(SYMS{1}.AUX.mask(:,ind));
+        avg_delta = mean(abs(diff(this_dat, 1, 1)));
+        avg_err = mean(this_err);
+        disp(mean(avg_delta/avg_err))
+
+    end
+end
 
 % fit data
 if run_fit
@@ -101,13 +114,14 @@ if run_fit
 
             disp(['  ind_sym : ' num2str(ind_sym)])
             if debug
+                n_cols = 12;
                 disp(['Allvars size : ' num2str(size(SYMS{1}.VARS.allvars))]);
                 disp('startvars :')
-                SYM.startvars
+                SYM.startvars(:, 1:n_cols)
 %                disp('Cens :')
 %                cen = SYMS{1}.VARS.allvars(1:SYMS{1}.VARS.Nph)
                 disp('auxvars (page1) :')
-                disp(AUX.auxvars(:,:,1))
+                disp(AUX.auxvars(:,1:n_cols,1))
                 disp('---------------')
                 disp('')
 

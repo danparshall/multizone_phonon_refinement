@@ -28,6 +28,16 @@ function k_f_max = calc_kfmax(Q_mag, k_i)
 end
 
 
+function symm_qs = apply_cubic_ops(q_vec)
+    % apply cubic symmetry operations
+    symm_qs = [
+        unique(perms(q_vec), 'rows');
+        -1*unique(perms(q_vec), 'rows');
+    ];
+    symm_qs(symm_qs == 0) = 0;
+end
+
+
 
 %% only designed for cubic crystal
 latt = XTAL.latt;
@@ -50,31 +60,41 @@ HKL_vals = [];
 Q_mags = [];
 mask = [];
 E_maxes = [];
+q_vec = [0, 0, 0.2];
+disp(["Generating data for reduced q : [" num2str(q_vec(1)) ", " num2str(q_vec(2)) ", " num2str(q_vec(3)) "]"])
+cubic_ops = apply_cubic_ops(q_vec);
 
 for H = 0:max_bzone
     for K = 0:max_bzone
         for L = 0:max_bzone
-            poss = [H K L];
-            Q_mag = sqrt(sum((Q_latt * poss).^2));
+            possibles = [H K L] + cubic_ops;
+            for P = 1:size(possibles, 1)
+                poss = possibles(P,:);
+                if ismember(poss, HKL_vals, 'rows')
+                    continue
+                end
+                Q_mag = sqrt(sum((Q_latt * poss).^2));
 
-            k_f_max = calc_kfmax(Q_mag, k_i);
+                k_f_max = calc_kfmax(Q_mag, k_i);
 
-            E_max = calc_mom_to_eng(k_f_max);
-            poss_phonons = cens < (E_max + 2);
+                E_max = calc_mom_to_eng(k_f_max);
+                poss_phonons = cens < (E_max + 2);
 
-            if (Q_mag < Q_max) && (Q_mag > 0) && sum(poss_phonons) > 0
-                HKL_vals = [HKL_vals; poss];
-                Q_mags = [Q_mags; Q_mag];
-                mask = [mask, poss_phonons];
-                E_maxes = [E_maxes E_max];
-            end  % end-if
+                if (Q_mag < Q_max) && (Q_mag > 0) && sum(poss_phonons) > 0
+                    HKL_vals = [HKL_vals; poss];
+                    Q_mags = [Q_mags; Q_mag];
+                    mask = [mask, poss_phonons];
+                    E_maxes = [E_maxes E_max];
+                end  % end-if
+            end  % end perms
         end
     end
 end
 
 
 % use only up to max_Qs points
-if length(Q_mags) > max_Qs
+if (max_Qs > 0) && (length(Q_mags) > max_Qs)
+    disp(["Restricting to " num2str(max_Qs) " out of " num2str(length(Q_mags)) " Q-points."])
     rand_idx = randperm(length(Q_mags));
     rand_idx = rand_idx(1:max_Qs);
     HKL_vals = HKL_vals(rand_idx, :);
@@ -91,5 +111,5 @@ sim_vars = [cens(:), wids(:), heights];
 %SYM.DAT.HKL_vals = HKL_vals;
 SYM.DAT.Q_hkl = HKL_vals;
 SYM.DAT.Qmags = Q_mags;
-SYM.E_maxes = E_maxes;  % kinematic contstraint; not needed for real data.
+SYM.E_maxes = E_maxes;  % kinematic constraint; not needed for real data.
 end  % end-function
